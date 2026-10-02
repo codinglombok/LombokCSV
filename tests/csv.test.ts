@@ -157,8 +157,6 @@ describe('LombokCSV - JSON Export', () => {
   })
 
   it('handles missing headers', () => {
-    const parser = new CSVParser('1,2\n3,4', { hasHeader: false })
-    // Note: CSV class always expects headers by default
     const csv = new CSV('1,2\n3,4', { hasHeader: false })
     expect(csv.getRows()).toHaveLength(2)
   })

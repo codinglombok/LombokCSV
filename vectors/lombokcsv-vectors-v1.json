@@ -1,0 +1,2303 @@
+{
+ "name": "lombokcsv-vectors",
+ "version": 1,
+ "spec": "docs/SPEC_LombokCSV (sections 2-6)",
+ "functions": {
+  "parseRows": "CSVParser(input, options).parseRows() -> string[][]",
+  "parse": "CSVParser(input, options).parse(options.hasHeader ?? true) -> {headers|null, rows, types}",
+  "toHTML": "CSV(input, options).toHTML(case.html) -> string",
+  "toJSON": "CSV(input, options).toJSON()",
+  "aggregate": "CSV(input, options).aggregate(case.agg)",
+  "error": "case.call raises an error whose code equals expected.code"
+ },
+ "cases": [
+  {
+   "id": "parseRows-001",
+   "fn": "parseRows",
+   "input": "",
+   "expected": []
+  },
+  {
+   "id": "parseRows-002",
+   "fn": "parseRows",
+   "input": "a",
+   "expected": [
+    [
+     "a"
+    ]
+   ]
+  },
+  {
+   "id": "parseRows-003",
+   "fn": "parseRows",
+   "input": "a,b,c",
+   "expected": [
+    [
+     "a",
+     "b",
+     "c"
+    ]
+   ]
+  },
+  {
+   "id": "parseRows-004",
+   "fn": "parseRows",
+   "input": "a,b\n1,2",
+   "expected": [
+    [
+     "a",
+     "b"
+    ],
+    [
+     "1",
+     "2"
+    ]
+   ]
+  },
+  {
+   "id": "parseRows-005",
+   "fn": "parseRows",
+   "input": "a,b\r\n1,2\r\n",
+   "expected": [
+    [
+     "a",
+     "b"
+    ],
+    [
+     "1",
+     "2"
+    ]
+   ]
+  },
+  {
+   "id": "parseRows-006",
+   "fn": "parseRows",
+   "input": "a,b\r1,2",
+   "expected": [
+    [
+     "a",
+     "b"
+    ],
+    [
+     "1",
+     "2"
+    ]
+   ]
+  },
+  {
+   "id": "parseRows-007",
+   "fn": "parseRows",
+   "input": "a,b\n\n1,2",
+   "expected": [
+    [
+     "a",
+     "b"
+    ],
+    [
+     "1",
+     "2"
+    ]
+   ]
+  },
+  {
+   "id": "parseRows-008",
+   "fn": "parseRows",
+   "input": "a,b\n\n\n",
+   "expected": [
+    [
+     "a",
+     "b"
+    ]
+   ]
+  },
+  {
+   "id": "parseRows-009",
+   "fn": "parseRows",
+   "input": "\n\na",
+   "expected": [
+    [
+     "a"
+    ]
+   ]
+  },
+  {
+   "id": "parseRows-010",
+   "fn": "parseRows",
+   "input": "a,b\n",
+   "expected": [
+    [
+     "a",
+     "b"
+    ]
+   ]
+  },
+  {
+   "id": "parseRows-011",
+   "fn": "parseRows",
+   "input": "a,,c",
+   "expected": [
+    [
+     "a",
+     "",
+     "c"
+    ]
+   ]
+  },
+  {
+   "id": "parseRows-012",
+   "fn": "parseRows",
+   "input": ",",
+   "expected": [
+    [
+     "",
+     ""
+    ]
+   ]
+  },
+  {
+   "id": "parseRows-013",
+   "fn": "parseRows",
+   "input": ",,\n,,",
+   "expected": [
+    [
+     "",
+     "",
+     ""
+    ],
+    [
+     "",
+     "",
+     ""
+    ]
+   ]
+  },
+  {
+   "id": "parseRows-014",
+   "fn": "parseRows",
+   "input": "a,b,",
+   "expected": [
+    [
+     "a",
+     "b",
+     ""
+    ]
+   ]
+  },
+  {
+   "id": "parseRows-015",
+   "fn": "parseRows",
+   "input": "\"a\"",
+   "expected": [
+    [
+     "a"
+    ]
+   ]
+  },
+  {
+   "id": "parseRows-016",
+   "fn": "parseRows",
+   "input": "\"\"",
+   "expected": [
+    [
+     ""
+    ]
+   ]
+  },
+  {
+   "id": "parseRows-017",
+   "fn": "parseRows",
+   "input": "\"\",\"\"",
+   "expected": [
+    [
+     "",
+     ""
+    ]
+   ]
+  },
+  {
+   "id": "parseRows-018",
+   "fn": "parseRows",
+   "input": "a\n\"\"\nb",
+   "expected": [
+    [
+     "a"
+    ],
+    [
+     ""
+    ],
+    [
+     "b"
+    ]
+   ]
+  },
+  {
+   "id": "parseRows-019",
+   "fn": "parseRows",
+   "input": "\"a,b\",c",
+   "expected": [
+    [
+     "a,b",
+     "c"
+    ]
+   ]
+  },
+  {
+   "id": "parseRows-020",
+   "fn": "parseRows",
+   "input": "\"line1\nline2\",x",
+   "expected": [
+    [
+     "line1\nline2",
+     "x"
+    ]
+   ]
+  },
+  {
+   "id": "parseRows-021",
+   "fn": "parseRows",
+   "input": "\"line1\r\nline2\"",
+   "expected": [
+    [
+     "line1\r\nline2"
+    ]
+   ]
+  },
+  {
+   "id": "parseRows-022",
+   "fn": "parseRows",
+   "input": "\"say \"\"hi\"\"\"",
+   "expected": [
+    [
+     "say \"hi\""
+    ]
+   ]
+  },
+  {
+   "id": "parseRows-023",
+   "fn": "parseRows",
+   "input": "\"\"\"\"",
+   "expected": [
+    [
+     "\""
+    ]
+   ]
+  },
+  {
+   "id": "parseRows-024",
+   "fn": "parseRows",
+   "input": "\"a\"\"b\",c",
+   "expected": [
+    [
+     "a\"b",
+     "c"
+    ]
+   ]
+  },
+  {
+   "id": "parseRows-025",
+   "fn": "parseRows",
+   "input": "ab\"c,d",
+   "expected": [
+    [
+     "ab\"c",
+     "d"
+    ]
+   ]
+  },
+  {
+   "id": "parseRows-026",
+   "fn": "parseRows",
+   "input": "a\"b\"c",
+   "expected": [
+    [
+     "a\"b\"c"
+    ]
+   ]
+  },
+  {
+   "id": "parseRows-027",
+   "fn": "parseRows",
+   "input": "\"ab\"c,d",
+   "expected": [
+    [
+     "abc",
+     "d"
+    ]
+   ]
+  },
+  {
+   "id": "parseRows-028",
+   "fn": "parseRows",
+   "input": "\"unterminated,x\ny",
+   "expected": [
+    [
+     "unterminated,x\ny"
+    ]
+   ]
+  },
+  {
+   "id": "parseRows-029",
+   "fn": "parseRows",
+   "input": "\"a\",",
+   "expected": [
+    [
+     "a",
+     ""
+    ]
+   ]
+  },
+  {
+   "id": "parseRows-030",
+   "fn": "parseRows",
+   "input": "\"a\"\n",
+   "expected": [
+    [
+     "a"
+    ]
+   ]
+  },
+  {
+   "id": "parseRows-031",
+   "fn": "parseRows",
+   "input": "﻿a,b\n1,2",
+   "expected": [
+    [
+     "a",
+     "b"
+    ],
+    [
+     "1",
+     "2"
+    ]
+   ]
+  },
+  {
+   "id": "parseRows-032",
+   "fn": "parseRows",
+   "input": "a,﻿b",
+   "expected": [
+    [
+     "a",
+     "﻿b"
+    ]
+   ]
+  },
+  {
+   "id": "parseRows-033",
+   "fn": "parseRows",
+   "input": "  a  ,  b  ",
+   "expected": [
+    [
+     "a",
+     "b"
+    ]
+   ]
+  },
+  {
+   "id": "parseRows-034",
+   "fn": "parseRows",
+   "input": "\ta\t,\tb",
+   "expected": [
+    [
+     "a",
+     "b"
+    ]
+   ]
+  },
+  {
+   "id": "parseRows-035",
+   "fn": "parseRows",
+   "input": "  a  ,  b  ",
+   "options": {
+    "trim": false
+   },
+   "expected": [
+    [
+     "  a  ",
+     "  b  "
+    ]
+   ]
+  },
+  {
+   "id": "parseRows-036",
+   "fn": "parseRows",
+   "input": "  \"a\"  ,b",
+   "expected": [
+    [
+     "a",
+     "b"
+    ]
+   ]
+  },
+  {
+   "id": "parseRows-037",
+   "fn": "parseRows",
+   "input": "\" a \",b",
+   "expected": [
+    [
+     " a ",
+     "b"
+    ]
+   ]
+  },
+  {
+   "id": "parseRows-038",
+   "fn": "parseRows",
+   "input": "\" a \",b",
+   "options": {
+    "trim": false
+   },
+   "expected": [
+    [
+     " a ",
+     "b"
+    ]
+   ]
+  },
+  {
+   "id": "parseRows-039",
+   "fn": "parseRows",
+   "input": "  \"a\"  ,b",
+   "options": {
+    "trim": false
+   },
+   "expected": [
+    [
+     "  \"a\"  ",
+     "b"
+    ]
+   ]
+  },
+  {
+   "id": "parseRows-040",
+   "fn": "parseRows",
+   "input": "a b,c  d",
+   "expected": [
+    [
+     "a b",
+     "c  d"
+    ]
+   ]
+  },
+  {
+   "id": "parseRows-041",
+   "fn": "parseRows",
+   "input": "   \n a",
+   "expected": [
+    [
+     "a"
+    ]
+   ]
+  },
+  {
+   "id": "parseRows-042",
+   "fn": "parseRows",
+   "input": "   \n a",
+   "options": {
+    "trim": false
+   },
+   "expected": [
+    [
+     "   "
+    ],
+    [
+     " a"
+    ]
+   ]
+  },
+  {
+   "id": "parseRows-043",
+   "fn": "parseRows",
+   "input": "a;b;c\n1;2;3",
+   "options": {
+    "delimiter": ";"
+   },
+   "expected": [
+    [
+     "a",
+     "b",
+     "c"
+    ],
+    [
+     "1",
+     "2",
+     "3"
+    ]
+   ]
+  },
+  {
+   "id": "parseRows-044",
+   "fn": "parseRows",
+   "input": "a,b;c",
+   "options": {
+    "delimiter": ";"
+   },
+   "expected": [
+    [
+     "a,b",
+     "c"
+    ]
+   ]
+  },
+  {
+   "id": "parseRows-045",
+   "fn": "parseRows",
+   "input": "a\tb\n1\t2",
+   "options": {
+    "delimiter": "\t"
+   },
+   "expected": [
+    [
+     "a",
+     "b"
+    ],
+    [
+     "1",
+     "2"
+    ]
+   ]
+  },
+  {
+   "id": "parseRows-046",
+   "fn": "parseRows",
+   "input": "a\t\tb",
+   "options": {
+    "delimiter": "\t"
+   },
+   "expected": [
+    [
+     "a",
+     "",
+     "b"
+    ]
+   ]
+  },
+  {
+   "id": "parseRows-047",
+   "fn": "parseRows",
+   "input": "a|b|c",
+   "options": {
+    "delimiter": "|"
+   },
+   "expected": [
+    [
+     "a",
+     "b",
+     "c"
+    ]
+   ]
+  },
+  {
+   "id": "parseRows-048",
+   "fn": "parseRows",
+   "input": "'a,b',c",
+   "options": {
+    "quote": "'"
+   },
+   "expected": [
+    [
+     "a,b",
+     "c"
+    ]
+   ]
+  },
+  {
+   "id": "parseRows-049",
+   "fn": "parseRows",
+   "input": "'it''s',x",
+   "options": {
+    "quote": "'"
+   },
+   "expected": [
+    [
+     "it's",
+     "x"
+    ]
+   ]
+  },
+  {
+   "id": "parseRows-050",
+   "fn": "parseRows",
+   "input": "\"a,b\",c",
+   "options": {
+    "quote": "'"
+   },
+   "expected": [
+    [
+     "\"a",
+     "b\"",
+     "c"
+    ]
+   ]
+  },
+  {
+   "id": "parseRows-051",
+   "fn": "parseRows",
+   "input": "é,ü\n日本,語",
+   "expected": [
+    [
+     "é",
+     "ü"
+    ],
+    [
+     "日本",
+     "語"
+    ]
+   ]
+  },
+  {
+   "id": "parseRows-052",
+   "fn": "parseRows",
+   "input": "😀,x",
+   "expected": [
+    [
+     "😀",
+     "x"
+    ]
+   ]
+  },
+  {
+   "id": "parseRows-053",
+   "fn": "parseRows",
+   "input": "a,b\n1",
+   "expected": [
+    [
+     "a",
+     "b"
+    ],
+    [
+     "1"
+    ]
+   ]
+  },
+  {
+   "id": "parseRows-054",
+   "fn": "parseRows",
+   "input": "a\n1,2,3",
+   "expected": [
+    [
+     "a"
+    ],
+    [
+     "1",
+     "2",
+     "3"
+    ]
+   ]
+  },
+  {
+   "id": "parseRows-055",
+   "fn": "parseRows",
+   "input": "\r\n\r\n",
+   "expected": []
+  },
+  {
+   "id": "parseRows-056",
+   "fn": "parseRows",
+   "input": "x\r\r\ny",
+   "expected": [
+    [
+     "x"
+    ],
+    [
+     "y"
+    ]
+   ]
+  },
+  {
+   "id": "error-001",
+   "fn": "error",
+   "input": "a,b",
+   "options": {
+    "delimiter": ""
+   },
+   "call": "parseRows",
+   "expected": {
+    "code": "INVALID_OPTION"
+   }
+  },
+  {
+   "id": "error-002",
+   "fn": "error",
+   "input": "a,b",
+   "options": {
+    "delimiter": ";;"
+   },
+   "call": "parseRows",
+   "expected": {
+    "code": "INVALID_OPTION"
+   }
+  },
+  {
+   "id": "error-003",
+   "fn": "error",
+   "input": "a,b",
+   "options": {
+    "delimiter": "\n"
+   },
+   "call": "parseRows",
+   "expected": {
+    "code": "INVALID_OPTION"
+   }
+  },
+  {
+   "id": "error-004",
+   "fn": "error",
+   "input": "a,b",
+   "options": {
+    "quote": "\r"
+   },
+   "call": "parseRows",
+   "expected": {
+    "code": "INVALID_OPTION"
+   }
+  },
+  {
+   "id": "error-005",
+   "fn": "error",
+   "input": "a,b",
+   "options": {
+    "delimiter": "\""
+   },
+   "call": "parseRows",
+   "expected": {
+    "code": "INVALID_OPTION"
+   }
+  },
+  {
+   "id": "error-006",
+   "fn": "error",
+   "input": "a,b",
+   "options": {
+    "quote": ""
+   },
+   "call": "parseRows",
+   "expected": {
+    "code": "INVALID_OPTION"
+   }
+  },
+  {
+   "id": "parse-001",
+   "fn": "parse",
+   "input": "",
+   "expected": {
+    "headers": null,
+    "rows": [],
+    "types": []
+   }
+  },
+  {
+   "id": "parse-002",
+   "fn": "parse",
+   "input": "Name,Age\nJohn,30",
+   "expected": {
+    "headers": [
+     "Name",
+     "Age"
+    ],
+    "rows": [
+     [
+      "John",
+      "30"
+     ]
+    ],
+    "types": [
+     "string",
+     "number"
+    ]
+   }
+  },
+  {
+   "id": "parse-003",
+   "fn": "parse",
+   "input": "Name,Age",
+   "expected": {
+    "headers": [
+     "Name",
+     "Age"
+    ],
+    "rows": [],
+    "types": []
+   }
+  },
+  {
+   "id": "parse-004",
+   "fn": "parse",
+   "input": "1,2\n3,4",
+   "options": {
+    "hasHeader": false
+   },
+   "expected": {
+    "headers": null,
+    "rows": [
+     [
+      "1",
+      "2"
+     ],
+     [
+      "3",
+      "4"
+     ]
+    ],
+    "types": [
+     "number",
+     "number"
+    ]
+   }
+  },
+  {
+   "id": "parse-005",
+   "fn": "parse",
+   "input": "h\n-1\n2.5\n.5\n3.\n1e10\n-2E-3",
+   "expected": {
+    "headers": [
+     "h"
+    ],
+    "rows": [
+     [
+      "-1"
+     ],
+     [
+      "2.5"
+     ],
+     [
+      ".5"
+     ],
+     [
+      "3."
+     ],
+     [
+      "1e10"
+     ],
+     [
+      "-2E-3"
+     ]
+    ],
+    "types": [
+     "number"
+    ]
+   }
+  },
+  {
+   "id": "parse-006",
+   "fn": "parse",
+   "input": "h\n+1",
+   "expected": {
+    "headers": [
+     "h"
+    ],
+    "rows": [
+     [
+      "+1"
+     ]
+    ],
+    "types": [
+     "string"
+    ]
+   }
+  },
+  {
+   "id": "parse-007",
+   "fn": "parse",
+   "input": "h\n1,5",
+   "expected": {
+    "headers": [
+     "h"
+    ],
+    "rows": [
+     [
+      "1",
+      "5"
+     ]
+    ],
+    "types": [
+     "number",
+     "number"
+    ]
+   }
+  },
+  {
+   "id": "parse-008",
+   "fn": "parse",
+   "input": "h\n1.000,5",
+   "expected": {
+    "headers": [
+     "h"
+    ],
+    "rows": [
+     [
+      "1.000",
+      "5"
+     ]
+    ],
+    "types": [
+     "number",
+     "number"
+    ]
+   }
+  },
+  {
+   "id": "parse-009",
+   "fn": "parse",
+   "input": "h\n0x1F",
+   "expected": {
+    "headers": [
+     "h"
+    ],
+    "rows": [
+     [
+      "0x1F"
+     ]
+    ],
+    "types": [
+     "string"
+    ]
+   }
+  },
+  {
+   "id": "parse-010",
+   "fn": "parse",
+   "input": "h\nInfinity",
+   "expected": {
+    "headers": [
+     "h"
+    ],
+    "rows": [
+     [
+      "Infinity"
+     ]
+    ],
+    "types": [
+     "string"
+    ]
+   }
+  },
+  {
+   "id": "parse-011",
+   "fn": "parse",
+   "input": "h\nNaN",
+   "expected": {
+    "headers": [
+     "h"
+    ],
+    "rows": [
+     [
+      "NaN"
+     ]
+    ],
+    "types": [
+     "string"
+    ]
+   }
+  },
+  {
+   "id": "parse-012",
+   "fn": "parse",
+   "input": "h\n-",
+   "expected": {
+    "headers": [
+     "h"
+    ],
+    "rows": [
+     [
+      "-"
+     ]
+    ],
+    "types": [
+     "string"
+    ]
+   }
+  },
+  {
+   "id": "parse-013",
+   "fn": "parse",
+   "input": "h\n.",
+   "expected": {
+    "headers": [
+     "h"
+    ],
+    "rows": [
+     [
+      "."
+     ]
+    ],
+    "types": [
+     "string"
+    ]
+   }
+  },
+  {
+   "id": "parse-014",
+   "fn": "parse",
+   "input": "h\n1e",
+   "expected": {
+    "headers": [
+     "h"
+    ],
+    "rows": [
+     [
+      "1e"
+     ]
+    ],
+    "types": [
+     "string"
+    ]
+   }
+  },
+  {
+   "id": "parse-015",
+   "fn": "parse",
+   "input": "d\n2026-07-24",
+   "expected": {
+    "headers": [
+     "d"
+    ],
+    "rows": [
+     [
+      "2026-07-24"
+     ]
+    ],
+    "types": [
+     "date"
+    ]
+   }
+  },
+  {
+   "id": "parse-016",
+   "fn": "parse",
+   "input": "d\n2026-07-24T10:30",
+   "expected": {
+    "headers": [
+     "d"
+    ],
+    "rows": [
+     [
+      "2026-07-24T10:30"
+     ]
+    ],
+    "types": [
+     "date"
+    ]
+   }
+  },
+  {
+   "id": "parse-017",
+   "fn": "parse",
+   "input": "d\n2026-07-24 10:30:15.250Z",
+   "expected": {
+    "headers": [
+     "d"
+    ],
+    "rows": [
+     [
+      "2026-07-24 10:30:15.250Z"
+     ]
+    ],
+    "types": [
+     "date"
+    ]
+   }
+  },
+  {
+   "id": "parse-018",
+   "fn": "parse",
+   "input": "d\n2026-07-24T10:30:00+07:00",
+   "expected": {
+    "headers": [
+     "d"
+    ],
+    "rows": [
+     [
+      "2026-07-24T10:30:00+07:00"
+     ]
+    ],
+    "types": [
+     "date"
+    ]
+   }
+  },
+  {
+   "id": "parse-019",
+   "fn": "parse",
+   "input": "d\n24/07/2026\n7/4/2026",
+   "expected": {
+    "headers": [
+     "d"
+    ],
+    "rows": [
+     [
+      "24/07/2026"
+     ],
+     [
+      "7/4/2026"
+     ]
+    ],
+    "types": [
+     "date"
+    ]
+   }
+  },
+  {
+   "id": "parse-020",
+   "fn": "parse",
+   "input": "d\n24-07-2026",
+   "expected": {
+    "headers": [
+     "d"
+    ],
+    "rows": [
+     [
+      "24-07-2026"
+     ]
+    ],
+    "types": [
+     "date"
+    ]
+   }
+  },
+  {
+   "id": "parse-021",
+   "fn": "parse",
+   "input": "d\n2026-07-24x",
+   "expected": {
+    "headers": [
+     "d"
+    ],
+    "rows": [
+     [
+      "2026-07-24x"
+     ]
+    ],
+    "types": [
+     "string"
+    ]
+   }
+  },
+  {
+   "id": "parse-022",
+   "fn": "parse",
+   "input": "d\n2026-7-24",
+   "expected": {
+    "headers": [
+     "d"
+    ],
+    "rows": [
+     [
+      "2026-7-24"
+     ]
+    ],
+    "types": [
+     "string"
+    ]
+   }
+  },
+  {
+   "id": "parse-023",
+   "fn": "parse",
+   "input": "d\n2026-07-24\n2026-07-25T08:00",
+   "expected": {
+    "headers": [
+     "d"
+    ],
+    "rows": [
+     [
+      "2026-07-24"
+     ],
+     [
+      "2026-07-25T08:00"
+     ]
+    ],
+    "types": [
+     "date"
+    ]
+   }
+  },
+  {
+   "id": "parse-024",
+   "fn": "parse",
+   "input": "b\ntrue\nFALSE\nYes\nno",
+   "expected": {
+    "headers": [
+     "b"
+    ],
+    "rows": [
+     [
+      "true"
+     ],
+     [
+      "FALSE"
+     ],
+     [
+      "Yes"
+     ],
+     [
+      "no"
+     ]
+    ],
+    "types": [
+     "boolean"
+    ]
+   }
+  },
+  {
+   "id": "parse-025",
+   "fn": "parse",
+   "input": "b\n1\n0",
+   "expected": {
+    "headers": [
+     "b"
+    ],
+    "rows": [
+     [
+      "1"
+     ],
+     [
+      "0"
+     ]
+    ],
+    "types": [
+     "number"
+    ]
+   }
+  },
+  {
+   "id": "parse-026",
+   "fn": "parse",
+   "input": "b\n1\nyes",
+   "expected": {
+    "headers": [
+     "b"
+    ],
+    "rows": [
+     [
+      "1"
+     ],
+     [
+      "yes"
+     ]
+    ],
+    "types": [
+     "boolean"
+    ]
+   }
+  },
+  {
+   "id": "parse-027",
+   "fn": "parse",
+   "input": "b\ny\nn",
+   "expected": {
+    "headers": [
+     "b"
+    ],
+    "rows": [
+     [
+      "y"
+     ],
+     [
+      "n"
+     ]
+    ],
+    "types": [
+     "string"
+    ]
+   }
+  },
+  {
+   "id": "parse-028",
+   "fn": "parse",
+   "input": "m\n1\nabc",
+   "expected": {
+    "headers": [
+     "m"
+    ],
+    "rows": [
+     [
+      "1"
+     ],
+     [
+      "abc"
+     ]
+    ],
+    "types": [
+     "string"
+    ]
+   }
+  },
+  {
+   "id": "parse-029",
+   "fn": "parse",
+   "input": "m\n1\n2026-01-01",
+   "expected": {
+    "headers": [
+     "m"
+    ],
+    "rows": [
+     [
+      "1"
+     ],
+     [
+      "2026-01-01"
+     ]
+    ],
+    "types": [
+     "string"
+    ]
+   }
+  },
+  {
+   "id": "parse-030",
+   "fn": "parse",
+   "input": "e\n\n",
+   "expected": {
+    "headers": [
+     "e"
+    ],
+    "rows": [],
+    "types": []
+   }
+  },
+  {
+   "id": "parse-031",
+   "fn": "parse",
+   "input": "a,b\n,1\n,2",
+   "expected": {
+    "headers": [
+     "a",
+     "b"
+    ],
+    "rows": [
+     [
+      "",
+      "1"
+     ],
+     [
+      "",
+      "2"
+     ]
+    ],
+    "types": [
+     "string",
+     "number"
+    ]
+   }
+  },
+  {
+   "id": "parse-032",
+   "fn": "parse",
+   "input": "a\n\" 7 \"",
+   "expected": {
+    "headers": [
+     "a"
+    ],
+    "rows": [
+     [
+      " 7 "
+     ]
+    ],
+    "types": [
+     "number"
+    ]
+   }
+  },
+  {
+   "id": "parse-033",
+   "fn": "parse",
+   "input": "a\n1\n2\n3\n4\n5\n6\n7\n8\n9\n10\nx",
+   "expected": {
+    "headers": [
+     "a"
+    ],
+    "rows": [
+     [
+      "1"
+     ],
+     [
+      "2"
+     ],
+     [
+      "3"
+     ],
+     [
+      "4"
+     ],
+     [
+      "5"
+     ],
+     [
+      "6"
+     ],
+     [
+      "7"
+     ],
+     [
+      "8"
+     ],
+     [
+      "9"
+     ],
+     [
+      "10"
+     ],
+     [
+      "x"
+     ]
+    ],
+    "types": [
+     "number"
+    ]
+   }
+  },
+  {
+   "id": "parse-034",
+   "fn": "parse",
+   "input": "a\nx\n1\n2\n3\n4\n5\n6\n7\n8\n9\n10",
+   "expected": {
+    "headers": [
+     "a"
+    ],
+    "rows": [
+     [
+      "x"
+     ],
+     [
+      "1"
+     ],
+     [
+      "2"
+     ],
+     [
+      "3"
+     ],
+     [
+      "4"
+     ],
+     [
+      "5"
+     ],
+     [
+      "6"
+     ],
+     [
+      "7"
+     ],
+     [
+      "8"
+     ],
+     [
+      "9"
+     ],
+     [
+      "10"
+     ]
+    ],
+    "types": [
+     "string"
+    ]
+   }
+  },
+  {
+   "id": "parse-035",
+   "fn": "parse",
+   "input": "a,b,c\n1\n2,x",
+   "expected": {
+    "headers": [
+     "a",
+     "b",
+     "c"
+    ],
+    "rows": [
+     [
+      "1"
+     ],
+     [
+      "2",
+      "x"
+     ]
+    ],
+    "types": [
+     "number",
+     "string"
+    ]
+   }
+  },
+  {
+   "id": "parse-036",
+   "fn": "parse",
+   "input": "a\n1,2,3",
+   "expected": {
+    "headers": [
+     "a"
+    ],
+    "rows": [
+     [
+      "1",
+      "2",
+      "3"
+     ]
+    ],
+    "types": [
+     "number",
+     "number",
+     "number"
+    ]
+   }
+  },
+  {
+   "id": "parse-037",
+   "fn": "parse",
+   "input": "Name,Value,Date,Active\nTest,123,2026-01-01,true",
+   "expected": {
+    "headers": [
+     "Name",
+     "Value",
+     "Date",
+     "Active"
+    ],
+    "rows": [
+     [
+      "Test",
+      "123",
+      "2026-01-01",
+      "true"
+     ]
+    ],
+    "types": [
+     "string",
+     "number",
+     "date",
+     "boolean"
+    ]
+   }
+  },
+  {
+   "id": "parse-038",
+   "fn": "parse",
+   "input": "x;y\n1;a",
+   "options": {
+    "delimiter": ";"
+   },
+   "expected": {
+    "headers": [
+     "x",
+     "y"
+    ],
+    "rows": [
+     [
+      "1",
+      "a"
+     ]
+    ],
+    "types": [
+     "number",
+     "string"
+    ]
+   }
+  },
+  {
+   "id": "parse-039",
+   "fn": "parse",
+   "input": "x\n  42  ",
+   "options": {
+    "trim": false
+   },
+   "expected": {
+    "headers": [
+     "x"
+    ],
+    "rows": [
+     [
+      "  42  "
+     ]
+    ],
+    "types": [
+     "number"
+    ]
+   }
+  },
+  {
+   "id": "toHTML-001",
+   "fn": "toHTML",
+   "input": "A\n1",
+   "expected": "<table>\n<thead>\n<tr>\n<th>A</th>\n</tr>\n</thead>\n<tbody>\n<tr>\n<td style=\"text-align: right\">1</td>\n</tr>\n</tbody>\n</table>"
+  },
+  {
+   "id": "toHTML-002",
+   "fn": "toHTML",
+   "input": "Name,Age\nJohn,30",
+   "expected": "<table>\n<thead>\n<tr>\n<th>Name</th>\n<th>Age</th>\n</tr>\n</thead>\n<tbody>\n<tr>\n<td>John</td>\n<td style=\"text-align: right\">30</td>\n</tr>\n</tbody>\n</table>"
+  },
+  {
+   "id": "toHTML-003",
+   "fn": "toHTML",
+   "input": "",
+   "expected": "<table>\n<tbody>\n</tbody>\n</table>"
+  },
+  {
+   "id": "toHTML-004",
+   "fn": "toHTML",
+   "input": "A,B",
+   "expected": "<table>\n<thead>\n<tr>\n<th>A</th>\n<th>B</th>\n</tr>\n</thead>\n<tbody>\n</tbody>\n</table>"
+  },
+  {
+   "id": "toHTML-005",
+   "fn": "toHTML",
+   "input": "1,x",
+   "options": {
+    "hasHeader": false
+   },
+   "expected": "<table>\n<tbody>\n<tr>\n<td style=\"text-align: right\">1</td>\n<td>x</td>\n</tr>\n</tbody>\n</table>"
+  },
+  {
+   "id": "toHTML-006",
+   "fn": "toHTML",
+   "input": "A\n<script>alert(\"x\")</script>",
+   "expected": "<table>\n<thead>\n<tr>\n<th>A</th>\n</tr>\n</thead>\n<tbody>\n<tr>\n<td>&lt;script&gt;alert(&quot;x&quot;)&lt;/script&gt;</td>\n</tr>\n</tbody>\n</table>"
+  },
+  {
+   "id": "toHTML-007",
+   "fn": "toHTML",
+   "input": "<b>&amp;'\nv",
+   "expected": "<table>\n<thead>\n<tr>\n<th>&lt;b&gt;&amp;amp;&#39;</th>\n</tr>\n</thead>\n<tbody>\n<tr>\n<td>v</td>\n</tr>\n</tbody>\n</table>"
+  },
+  {
+   "id": "toHTML-008",
+   "fn": "toHTML",
+   "input": "A\n1",
+   "html": {
+    "className": "data-table",
+    "id": "t1"
+   },
+   "expected": "<table class=\"data-table\" id=\"t1\">\n<thead>\n<tr>\n<th>A</th>\n</tr>\n</thead>\n<tbody>\n<tr>\n<td style=\"text-align: right\">1</td>\n</tr>\n</tbody>\n</table>"
+  },
+  {
+   "id": "toHTML-009",
+   "fn": "toHTML",
+   "input": "A\nx",
+   "html": {
+    "className": "\" onclick=\"alert(1)"
+   },
+   "expected": "<table class=\"&quot; onclick=&quot;alert(1)\">\n<thead>\n<tr>\n<th>A</th>\n</tr>\n</thead>\n<tbody>\n<tr>\n<td>x</td>\n</tr>\n</tbody>\n</table>"
+  },
+  {
+   "id": "toHTML-010",
+   "fn": "toHTML",
+   "input": "A\nx",
+   "html": {
+    "id": "a'b<"
+   },
+   "expected": "<table id=\"a&#39;b&lt;\">\n<thead>\n<tr>\n<th>A</th>\n</tr>\n</thead>\n<tbody>\n<tr>\n<td>x</td>\n</tr>\n</tbody>\n</table>"
+  },
+  {
+   "id": "toHTML-011",
+   "fn": "toHTML",
+   "input": "A\nx",
+   "html": {
+    "className": "",
+    "id": ""
+   },
+   "expected": "<table>\n<thead>\n<tr>\n<th>A</th>\n</tr>\n</thead>\n<tbody>\n<tr>\n<td>x</td>\n</tr>\n</tbody>\n</table>"
+  },
+  {
+   "id": "toHTML-012",
+   "fn": "toHTML",
+   "input": "A,B\n1\n2,3",
+   "expected": "<table>\n<thead>\n<tr>\n<th>A</th>\n<th>B</th>\n</tr>\n</thead>\n<tbody>\n<tr>\n<td style=\"text-align: right\">1</td>\n</tr>\n<tr>\n<td style=\"text-align: right\">2</td>\n<td style=\"text-align: right\">3</td>\n</tr>\n</tbody>\n</table>"
+  },
+  {
+   "id": "toHTML-013",
+   "fn": "toHTML",
+   "input": "A,B\n,x",
+   "expected": "<table>\n<thead>\n<tr>\n<th>A</th>\n<th>B</th>\n</tr>\n</thead>\n<tbody>\n<tr>\n<td></td>\n<td>x</td>\n</tr>\n</tbody>\n</table>"
+  },
+  {
+   "id": "toHTML-014",
+   "fn": "toHTML",
+   "input": "A\n\"l1\nl2\"",
+   "expected": "<table>\n<thead>\n<tr>\n<th>A</th>\n</tr>\n</thead>\n<tbody>\n<tr>\n<td>l1\nl2</td>\n</tr>\n</tbody>\n</table>"
+  },
+  {
+   "id": "toHTML-015",
+   "fn": "toHTML",
+   "input": "D\n2026-01-01",
+   "expected": "<table>\n<thead>\n<tr>\n<th>D</th>\n</tr>\n</thead>\n<tbody>\n<tr>\n<td>2026-01-01</td>\n</tr>\n</tbody>\n</table>"
+  },
+  {
+   "id": "toJSON-001",
+   "fn": "toJSON",
+   "input": "Name,Age\nJohn,30\nJane,25",
+   "expected": [
+    {
+     "Name": "John",
+     "Age": "30"
+    },
+    {
+     "Name": "Jane",
+     "Age": "25"
+    }
+   ]
+  },
+  {
+   "id": "toJSON-002",
+   "fn": "toJSON",
+   "input": "1,2\n3,4",
+   "options": {
+    "hasHeader": false
+   },
+   "expected": [
+    [
+     "1",
+     "2"
+    ],
+    [
+     "3",
+     "4"
+    ]
+   ]
+  },
+  {
+   "id": "toJSON-003",
+   "fn": "toJSON",
+   "input": "a,b\n1",
+   "expected": [
+    {
+     "a": "1",
+     "b": ""
+    }
+   ]
+  },
+  {
+   "id": "toJSON-004",
+   "fn": "toJSON",
+   "input": "a\n1,2",
+   "expected": [
+    {
+     "a": "1"
+    }
+   ]
+  },
+  {
+   "id": "toJSON-005",
+   "fn": "toJSON",
+   "input": "a,a\n1,2",
+   "expected": [
+    {
+     "a": "2"
+    }
+   ]
+  },
+  {
+   "id": "toJSON-006",
+   "fn": "toJSON",
+   "input": "a,b",
+   "expected": []
+  },
+  {
+   "id": "toJSON-007",
+   "fn": "toJSON",
+   "input": "",
+   "expected": []
+  },
+  {
+   "id": "toJSON-008",
+   "fn": "toJSON",
+   "input": "k\n\"x,y\"",
+   "expected": [
+    {
+     "k": "x,y"
+    }
+   ]
+  },
+  {
+   "id": "toJSON-009",
+   "fn": "toJSON",
+   "input": ",b\n1,2",
+   "expected": [
+    {
+     "": "1",
+     "b": "2"
+    }
+   ]
+  },
+  {
+   "id": "aggregate-001",
+   "fn": "aggregate",
+   "input": "Department,Employee,Salary\nIT,John,50000\nIT,Jane,55000\nSales,Bob,40000\nSales,Alice,45000",
+   "agg": {
+    "groupBy": 0,
+    "count": true
+   },
+   "expected": [
+    {
+     "Department": "IT",
+     "count": 2
+    },
+    {
+     "Department": "Sales",
+     "count": 2
+    }
+   ]
+  },
+  {
+   "id": "aggregate-002",
+   "fn": "aggregate",
+   "input": "Department,Employee,Salary\nIT,John,50000\nIT,Jane,55000\nSales,Bob,40000\nSales,Alice,45000",
+   "agg": {
+    "groupBy": "Department",
+    "sum": [
+     "Salary"
+    ]
+   },
+   "expected": [
+    {
+     "Department": "IT",
+     "Salary_sum": 105000
+    },
+    {
+     "Department": "Sales",
+     "Salary_sum": 85000
+    }
+   ]
+  },
+  {
+   "id": "aggregate-003",
+   "fn": "aggregate",
+   "input": "Department,Employee,Salary\nIT,John,50000\nIT,Jane,55000\nSales,Bob,40000\nSales,Alice,45000",
+   "agg": {
+    "groupBy": "Department",
+    "avg": [
+     "Salary"
+    ]
+   },
+   "expected": [
+    {
+     "Department": "IT",
+     "Salary_avg": 52500
+    },
+    {
+     "Department": "Sales",
+     "Salary_avg": 42500
+    }
+   ]
+  },
+  {
+   "id": "aggregate-004",
+   "fn": "aggregate",
+   "input": "Department,Employee,Salary\nIT,John,50000\nIT,Jane,55000\nSales,Bob,40000\nSales,Alice,45000",
+   "agg": {
+    "groupBy": "Department",
+    "sum": [
+     "Salary"
+    ],
+    "avg": [
+     2
+    ],
+    "count": true
+   },
+   "expected": [
+    {
+     "Department": "IT",
+     "Salary_sum": 105000,
+     "Salary_avg": 52500,
+     "count": 2
+    },
+    {
+     "Department": "Sales",
+     "Salary_sum": 85000,
+     "Salary_avg": 42500,
+     "count": 2
+    }
+   ]
+  },
+  {
+   "id": "aggregate-005",
+   "fn": "aggregate",
+   "input": "Department,Employee,Salary\nIT,John,50000\nIT,Jane,55000\nSales,Bob,40000\nSales,Alice,45000",
+   "agg": {
+    "groupBy": "Department"
+   },
+   "expected": [
+    {
+     "Department": "IT"
+    },
+    {
+     "Department": "Sales"
+    }
+   ]
+  },
+  {
+   "id": "aggregate-006",
+   "fn": "aggregate",
+   "input": "g,v\nb,1\na,2\nb,3",
+   "agg": {
+    "groupBy": "g",
+    "sum": [
+     "v"
+    ]
+   },
+   "expected": [
+    {
+     "g": "b",
+     "v_sum": 4
+    },
+    {
+     "g": "a",
+     "v_sum": 2
+    }
+   ]
+  },
+  {
+   "id": "aggregate-007",
+   "fn": "aggregate",
+   "input": "g,v\nx,1\nx,abc\nx,\nx,2",
+   "agg": {
+    "groupBy": "g",
+    "sum": [
+     "v"
+    ],
+    "avg": [
+     "v"
+    ],
+    "count": true
+   },
+   "expected": [
+    {
+     "g": "x",
+     "v_sum": 3,
+     "v_avg": 1.5,
+     "count": 4
+    }
+   ]
+  },
+  {
+   "id": "aggregate-008",
+   "fn": "aggregate",
+   "input": "g,v\nx,abc",
+   "agg": {
+    "groupBy": "g",
+    "sum": [
+     "v"
+    ],
+    "avg": [
+     "v"
+    ]
+   },
+   "expected": [
+    {
+     "g": "x",
+     "v_sum": 0,
+     "v_avg": null
+    }
+   ]
+  },
+  {
+   "id": "aggregate-009",
+   "fn": "aggregate",
+   "input": "g,v\nx,12abc",
+   "agg": {
+    "groupBy": "g",
+    "sum": [
+     "v"
+    ]
+   },
+   "expected": [
+    {
+     "g": "x",
+     "v_sum": 0
+    }
+   ]
+  },
+  {
+   "id": "aggregate-010",
+   "fn": "aggregate",
+   "input": "g,v\nx,1.5\nx,-0.5\nx,1e3",
+   "agg": {
+    "groupBy": "g",
+    "sum": [
+     "v"
+    ]
+   },
+   "expected": [
+    {
+     "g": "x",
+     "v_sum": 1001
+    }
+   ]
+  },
+  {
+   "id": "aggregate-011",
+   "fn": "aggregate",
+   "input": "g,v\nx,1\nx,2\nx,2",
+   "agg": {
+    "groupBy": "g",
+    "avg": [
+     "v"
+    ]
+   },
+   "expected": [
+    {
+     "g": "x",
+     "v_avg": 1.6666666666666667
+    }
+   ]
+  },
+  {
+   "id": "aggregate-012",
+   "fn": "aggregate",
+   "input": "g,v\nx,0.1\nx,0.2",
+   "agg": {
+    "groupBy": "g",
+    "sum": [
+     "v"
+    ]
+   },
+   "expected": [
+    {
+     "g": "x",
+     "v_sum": 0.30000000000000004
+    }
+   ]
+  },
+  {
+   "id": "aggregate-013",
+   "fn": "aggregate",
+   "input": "g,v\n,1\na,2\n,3",
+   "agg": {
+    "groupBy": "g",
+    "count": true
+   },
+   "expected": [
+    {
+     "g": "",
+     "count": 2
+    },
+    {
+     "g": "a",
+     "count": 1
+    }
+   ]
+  },
+  {
+   "id": "aggregate-014",
+   "fn": "aggregate",
+   "input": "g,v\na\na,5",
+   "agg": {
+    "groupBy": 0,
+    "sum": [
+     1
+    ],
+    "count": true
+   },
+   "expected": [
+    {
+     "g": "a",
+     "v_sum": 5,
+     "count": 2
+    }
+   ]
+  },
+  {
+   "id": "aggregate-015",
+   "fn": "aggregate",
+   "input": "a,1\nb,2\na,3",
+   "options": {
+    "hasHeader": false
+   },
+   "agg": {
+    "groupBy": 0,
+    "sum": [
+     1
+    ]
+   },
+   "expected": [
+    {
+     "col_0": "a",
+     "col_1_sum": 4
+    },
+    {
+     "col_0": "b",
+     "col_1_sum": 2
+    }
+   ]
+  },
+  {
+   "id": "aggregate-016",
+   "fn": "aggregate",
+   "input": "g,v\nA,1\na,2",
+   "agg": {
+    "groupBy": "g",
+    "count": true
+   },
+   "expected": [
+    {
+     "g": "A",
+     "count": 1
+    },
+    {
+     "g": "a",
+     "count": 1
+    }
+   ]
+  },
+  {
+   "id": "aggregate-017",
+   "fn": "aggregate",
+   "input": "g,v\n\" a\",1\na,2",
+   "agg": {
+    "groupBy": "g",
+    "count": true
+   },
+   "expected": [
+    {
+     "g": " a",
+     "count": 1
+    },
+    {
+     "g": "a",
+     "count": 1
+    }
+   ]
+  },
+  {
+   "id": "aggregate-018",
+   "fn": "aggregate",
+   "input": "g,v\nx, 7 ",
+   "options": {
+    "trim": false
+   },
+   "agg": {
+    "groupBy": "g",
+    "sum": [
+     "v"
+    ]
+   },
+   "expected": [
+    {
+     "g": "x",
+     "v_sum": 7
+    }
+   ]
+  },
+  {
+   "id": "aggregate-019",
+   "fn": "aggregate",
+   "input": "g,v",
+   "agg": {
+    "groupBy": "g",
+    "count": true
+   },
+   "expected": []
+  },
+  {
+   "id": "aggregate-020",
+   "fn": "aggregate",
+   "input": "g,v\nx,1",
+   "agg": {
+    "groupBy": "g",
+    "sum": [
+     "v"
+    ],
+    "count": false
+   },
+   "expected": [
+    {
+     "g": "x",
+     "v_sum": 1
+    }
+   ]
+  },
+  {
+   "id": "error-007",
+   "fn": "error",
+   "input": "Department,Employee,Salary\nIT,John,50000\nIT,Jane,55000\nSales,Bob,40000\nSales,Alice,45000",
+   "call": "aggregate",
+   "agg": {
+    "groupBy": "Missing",
+    "count": true
+   },
+   "expected": {
+    "code": "UNKNOWN_COLUMN"
+   }
+  },
+  {
+   "id": "error-008",
+   "fn": "error",
+   "input": "Department,Employee,Salary\nIT,John,50000\nIT,Jane,55000\nSales,Bob,40000\nSales,Alice,45000",
+   "call": "aggregate",
+   "agg": {
+    "groupBy": 0,
+    "sum": [
+     "Missing"
+    ]
+   },
+   "expected": {
+    "code": "UNKNOWN_COLUMN"
+   }
+  },
+  {
+   "id": "error-009",
+   "fn": "error",
+   "input": "Department,Employee,Salary\nIT,John,50000\nIT,Jane,55000\nSales,Bob,40000\nSales,Alice,45000",
+   "call": "aggregate",
+   "agg": {
+    "groupBy": 0,
+    "avg": [
+     "Missing"
+    ]
+   },
+   "expected": {
+    "code": "UNKNOWN_COLUMN"
+   }
+  },
+  {
+   "id": "error-010",
+   "fn": "error",
+   "input": "Department,Employee,Salary\nIT,John,50000\nIT,Jane,55000\nSales,Bob,40000\nSales,Alice,45000",
+   "call": "aggregate",
+   "agg": {
+    "groupBy": 3
+   },
+   "expected": {
+    "code": "UNKNOWN_COLUMN"
+   }
+  },
+  {
+   "id": "error-011",
+   "fn": "error",
+   "input": "Department,Employee,Salary\nIT,John,50000\nIT,Jane,55000\nSales,Bob,40000\nSales,Alice,45000",
+   "call": "aggregate",
+   "agg": {
+    "groupBy": -1
+   },
+   "expected": {
+    "code": "UNKNOWN_COLUMN"
+   }
+  },
+  {
+   "id": "error-012",
+   "fn": "error",
+   "input": "Department,Employee,Salary\nIT,John,50000\nIT,Jane,55000\nSales,Bob,40000\nSales,Alice,45000",
+   "call": "aggregate",
+   "agg": {
+    "groupBy": 1.5
+   },
+   "expected": {
+    "code": "UNKNOWN_COLUMN"
+   }
+  },
+  {
+   "id": "error-013",
+   "fn": "error",
+   "input": "1,2",
+   "options": {
+    "hasHeader": false
+   },
+   "call": "aggregate",
+   "agg": {
+    "groupBy": "1"
+   },
+   "expected": {
+    "code": "UNKNOWN_COLUMN"
+   }
+  }
+ ]
+}

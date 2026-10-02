@@ -1,7 +1,11 @@
 # LombokCSV — Python port
 
-> Planned. The python port will implement the identical public API and pass the same test fixtures as the reference TypeScript implementation.
+Status: **stub**. This folder contains no code yet; nothing is published for Python.
 
-**Package name:** `lombokcsv`
+| Item | Value |
+|---|---|
+| Planned package | `lombokcsv` (PyPI) |
+| Contract | [SPEC](../../docs/SPEC_LombokCSV_v1.1.0.md) |
+| Acceptance | a runner that executes all cases in `vectors/lombokcsv-vectors-v1.json` with byte-identical results (GP-11) |
 
-Track progress on the [Lombok Ecosystem Roadmap](https://github.com/orgs/codinglombok/projects).
+Contributions are welcome; see [CONTRIBUTING.md](../../CONTRIBUTING.md).
