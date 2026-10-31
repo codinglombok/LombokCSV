@@ -1,23 +1,39 @@
 {
-    "name": "codinglombok/lombokcsv",
-    "description": "RFC 4180 CSV parser with type detection, safe HTML tables, JSON export and GROUP BY aggregation. Zero dependencies. Part of the Lombok Ecosystem.",
-    "type": "library",
-    "license": "Apache-2.0",
-    "keywords": ["csv", "rfc4180", "parser", "group-by", "type-detection", "zero-dependency", "lombok-ecosystem"],
-    "homepage": "https://github.com/codinglombok/LombokCSV",
-    "authors": [{ "name": "codinglombok" }],
-    "require": {
-        "php": ">=8.1"
-    },
-    "support": {
-        "issues": "https://github.com/codinglombok/LombokCSV/issues",
-        "source": "https://github.com/codinglombok/LombokCSV"
-    },
-    "autoload": {
-        "psr-4": { "CodingLombok\\LombokCSV\\": "php/src/" },
-        "files": ["php/src/functions.php"]
-    },
-    "scripts": {
-        "test": "php php/tests/run.php"
+  "name": "codinglombok/lombokcsv",
+  "description": "RFC 4180 CSV parser with type detection, safe HTML tables, JSON export and GROUP BY aggregation. Zero dependencies. Part of the Lombok Ecosystem.",
+  "type": "library",
+  "license": "Apache-2.0",
+  "keywords": [
+    "csv",
+    "rfc4180",
+    "parser",
+    "group-by",
+    "type-detection",
+    "zero-dependency",
+    "lombok-ecosystem"
+  ],
+  "homepage": "https://github.com/codinglombok/LombokCSV",
+  "authors": [
+    {
+      "name": "codinglombok"
     }
+  ],
+  "require": {
+    "php": ">=8.1"
+  },
+  "support": {
+    "issues": "https://github.com/codinglombok/LombokCSV/issues",
+    "source": "https://github.com/codinglombok/LombokCSV"
+  },
+  "autoload": {
+    "psr-4": {
+      "CodingLombok\\LombokCSV\\": "php/src/"
+    },
+    "files": [
+      "php/src/functions.php"
+    ]
+  },
+  "scripts": {
+    "test": "php php/tests/run.php"
+  }
 }
