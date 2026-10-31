@@ -1,0 +1,12 @@
+node_modules
+dist
+coverage
+.git
+docs
+python
+go
+php
+vectors
+crashes
+*.md
+!README.md
