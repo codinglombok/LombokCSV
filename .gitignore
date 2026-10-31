@@ -1,13 +1,47 @@
+// ===== Lombok Ecosystem - internal documents (not committed; ADR-024) =====
+/map
+/Map_*.md
+/SPEC_*.md
+/Stucture Repo_*.md
+/TECH DEBT_*.md
+/Architecture_*.md
+/Masterplan_*.md
+/docs/*architecture*.*
+/docs/*masterplan*.*
+/docs/Architecture_*.md
+/docs/Masterplan_*.md
+/docs/TECH DEBT_*.md
+
+# Node / TypeScript
 node_modules/
 dist/
 *.log
-.DS_Store
-coverage/
-.env
 *.tgz
+coverage/
+
+# Python port
+python/__pycache__/
+python/**/__pycache__/
+python/*.egg-info/
+python/dist/
+python/build/
+python/.pytest_cache/
+python/.coverage
+.coverage
+*.pyc
+
+# Go port
+go/cover.out
+go/bin/
+
+# PHP port
+php/vendor/
+php/.phpunit.result.cache
+
+# Fuzzing
 crashes/
 
-# Dokumen internal Lombok Ecosystem (v3.6, ADR-024) - tidak di-commit
-/map
-/docs/*architecture*.*
-/docs/*masterplan*.*
+# Environment & OS
+.env
+.DS_Store
+Thumbs.db

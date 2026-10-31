@@ -10,7 +10,7 @@ export {
   isNumber,
   isDate,
   isBoolean,
-} from './csv.js'
+} from './csv.js';
 export type {
   CSVData,
   CSVOptions,
@@ -19,4 +19,4 @@ export type {
   AggregationOptions,
   AggregationResult,
   HTMLOptions,
-} from './csv.js'
+} from './csv.js';

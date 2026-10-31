@@ -1,16 +1,16 @@
 /**
  * Fuzz test — LombokCSV parser
  *
- * Target: `new CSVParser(input).parse()` — parser CSV bikinan sendiri
- * (bukan wrapper library luar), jadi ini paling rawan bug tersembunyi:
- * quote tidak seimbang, delimiter di tengah quoted field, baris dengan
- * jumlah kolom tidak konsisten, encoding aneh, dsb.
+ * Target: `new CSVParser(input).parse()` — our own CSV parser (not a wrapper
+ * around an external library), so this is where hidden bugs are most likely:
+ * unbalanced quotes, delimiters inside quoted fields, rows with inconsistent
+ * column counts, odd encodings, and so on.
  *
- * Jalankan:
+ * Run:
  *   npm run fuzz
  */
-import { LombokFuzzer, FuzzMode, HarnessMode, FuzzEvent } from 'lombokfuzzer'
-import { CSVParser } from '../../dist/index.js'
+import { LombokFuzzer, FuzzMode, HarnessMode, FuzzEvent } from 'lombokfuzzer';
+import { CSVParser } from '../../dist/index.js';
 
 const fuzzer = new LombokFuzzer({
   name: 'lombokcsv-parser',
@@ -21,58 +21,57 @@ const fuzzer = new LombokFuzzer({
   harness: {
     mode: HarnessMode.InProcess,
     targetFunction: (data: Uint8Array) => {
-      const text = Buffer.from(data).toString('utf-8')
-      new CSVParser(text).parse(true)
-      new CSVParser(text).parse(false) // jalur tanpa header juga dites
+      const text = Buffer.from(data).toString('utf-8');
+      new CSVParser(text).parse(true);
+      new CSVParser(text).parse(false); // the no-header path is exercised too
     },
   },
-})
+});
 
-// Seed corpus — kasus umum + kasus tepi yang sering bikin parser CSV meleset.
+// Seed corpus — common cases plus edge cases that tend to trip CSV parsers.
 const seeds = [
   'name,age,city\nAna,30,Jakarta\nBudi,25,Bandung',
   'a,"b,c",d\n1,2,3',
   '"quoted ""escaped"" value",plain\nfoo,bar',
   'col1,col2\r\nval1,val2\r\n', // CRLF
-  '\uFEFFname,age\nAna,30', // BOM
-  'a,b,c\n1,2\n1,2,3,4', // jumlah kolom tidak konsisten antar baris
+  '﻿name,age\nAna,30', // BOM
+  'a,b,c\n1,2\n1,2,3,4', // inconsistent column count between rows
   '"unterminated quote,next\nfield',
   ',,,\n,,,',
   'single-column-no-comma',
-  'a;b;c\n1;2;3', // delimiter non-koma (dites juga lewat options di file lain)
-]
+  'a;b;c\n1;2;3', // non-comma delimiter (also tested through options elsewhere)
+];
 
 for (const s of seeds) {
-  fuzzer.addSeed(new TextEncoder().encode(s))
+  fuzzer.addSeed(new TextEncoder().encode(s));
 }
 
 fuzzer.on(FuzzEvent.CrashFound, ({ crash }) => {
   console.error(
-    `[CRASH] ${crash.id} — ${crash.category} (${crash.severity})` +
-      (crash.isDuplicate ? ' [duplicate]' : ''),
-  )
-  const preview = Buffer.from(crash.input.data).toString('utf-8').slice(0, 200)
-  console.error(`  input: ${JSON.stringify(preview)}`)
-})
+    `[CRASH] ${crash.id} — ${crash.category} (${crash.severity})` + (crash.isDuplicate ? ' [duplicate]' : ''),
+  );
+  const preview = Buffer.from(crash.input.data).toString('utf-8').slice(0, 200);
+  console.error(`  input: ${JSON.stringify(preview)}`);
+});
 
 async function main() {
-  console.log('Fuzzing LombokCSV parser...\n')
-  const stats = await fuzzer.run()
+  console.log('Fuzzing LombokCSV parser...\n');
+  const stats = await fuzzer.run();
 
-  console.log(`\nExecutions   : ${stats.totalExecutions}`)
-  console.log(`Exec/sec     : ${Math.round(stats.execsPerSecond)}`)
-  console.log(`Corpus size  : ${stats.corpusSize}`)
-  console.log(`Unique crashes : ${stats.uniqueCrashes}`)
-  console.log(`Unique hangs   : ${stats.uniqueTimeouts}`)
+  console.log(`\nExecutions     : ${stats.totalExecutions}`);
+  console.log(`Exec/sec       : ${Math.round(stats.execsPerSecond)}`);
+  console.log(`Corpus size    : ${stats.corpusSize}`);
+  console.log(`Unique crashes : ${stats.uniqueCrashes}`);
+  console.log(`Unique hangs   : ${stats.uniqueTimeouts}`);
 
   if (stats.uniqueCrashes > 0 || stats.uniqueTimeouts > 0) {
-    console.error('\nFuzzing menemukan crash/hang — lihat detail di atas dan folder ./crashes')
-    process.exit(1)
+    console.error('\nFuzzing found crashes/hangs — see details above and the ./crashes folder');
+    process.exit(1);
   }
-  console.log('\nTidak ada crash ditemukan.')
+  console.log('\nNo crashes found.');
 }
 
 main().catch((err) => {
-  console.error('Fuzz runner gagal:', err)
-  process.exit(1)
-})
+  console.error('Fuzz runner failed:', err);
+  process.exit(1);
+});
