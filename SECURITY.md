@@ -15,7 +15,7 @@ Do not open a public issue. You should receive an acknowledgement within 3 worki
 
 ## Scope and threat model
 
-LombokCSV parses untrusted text and renders it as HTML. The guarantees are normative and listed in [SPEC section 8](docs/SPEC_LombokCSV_v1.1.0.md#8-keamanan-normatif):
+LombokCSV parses untrusted text and renders it as HTML. The guarantees are normative and listed in [SPEC section 8](docs/SPEC_LombokCSV_v1.1.0.md#8-security-normative):
 
 - parsing runs in linear time and never throws on any input;
 - every piece of text written by `toHTML`, including the `class` and `id` options, is escaped for element content and double-quoted attributes;

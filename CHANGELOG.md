@@ -11,17 +11,45 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [1.1.0] — 2026-10-01
 
-Brings the library in line with the Lombok Ecosystem v3.6 standards: a normative
-specification, executed shared vectors, and claims that match the code.
+Brings the library in line with the Lombok Ecosystem v3.7 standards: a normative
+specification, executed shared vectors, identical behaviour in four languages,
+and claims that match the code.
 
 ### Added
-- `docs/SPEC_LombokCSV_v1.1.0.md`: normative contract for parsing, type detection, HTML, JSON and aggregation.
-- `vectors/lombokcsv-vectors-v1.json`: 152 hand-written cases, executed by `tests/vectors.test.ts`.
-- `trim` option (default `true`, the previous behaviour) to switch to strict RFC 4180 whitespace handling.
-- `CSVError` with stable `code` values `INVALID_OPTION` and `UNKNOWN_COLUMN`.
-- Exported helpers `detectTypes`, `escapeHTML`, `isNumber`, `isDate`, `isBoolean` and `TYPE_SAMPLE_ROWS`.
-- Ten standard documents under `docs/` and `scripts/lombok-doctor.sh`.
-- Coverage threshold (90%) and `npm pack --dry-run` in CI; GitHub Actions pinned to commit SHAs.
+- Python, Go and PHP ports, all consuming the shared vectors and passing all
+  152 cases with byte-identical results before any release tag (`python/`,
+  `go/`, `php/` language folders at the repository root; root `composer.json`
+  without a version field for Packagist).
+- `docs/SPEC_LombokCSV_v1.1.0.md`: normative contract for parsing, type
+  detection, HTML, JSON and aggregation, now with the normative vector
+  comparison semantics and the canonical error messages.
+- `vectors/lombokcsv-vectors-v1.json`: 152 hand-written cases, executed by a
+  runner in every port; error cases pin both the stable `code` and the
+  canonical `[CODE] message` text.
+- Canonical error messages prefixed with the error code (S3): e.g.
+  `[UNKNOWN_COLUMN] unknown column: Missing`.
+- Exported helpers `detectTypes`, `escapeHTML`, `isNumber`, `isDate`,
+  `isBoolean` and `TYPE_SAMPLE_ROWS` (PEP 8 names in Python, namespaced
+  functions in PHP, exported functions in Go).
+- Go port ships an insertion-ordered `Obj` map so object key order is
+  preserved where the contract mandates it.
+- Ten standard documents under `docs/` (in English) and
+  `scripts/lombok-doctor.sh` (v3.7 D-ENV variant, English messages) plus
+  `scripts/bump_version.sh`.
+- CI (LombokVector pattern): one job per language folder with OS x runtime
+  matrices, `hashFiles` guards, concurrency cancellation, per-port coverage
+  gates (TypeScript 95% statements / 90% branches; ports 90%), deterministic
+  vector regeneration, doctor, npm audit and fuzzing.
+- Release flows: `release.yml` on `v*` tags (npm, PyPI trusted publishing,
+  GHCR/Docker Hub image, `go/v*` module tag, GitHub Release bundle with
+  SHA256SUMS) and staged `release-npm/pypi/docker.yml` workflow dispatch runs
+  with `dry_run=true` default.
+- Coverage threshold raised to 95% statements / 90% branches for the reference
+  implementation; `npm pack --dry-run` and the fuzz harness run in CI.
+- ESLint flat config and Prettier (clean), `.prettierignore` covering the
+  generated vector file; container image (`Dockerfile`) whose entrypoint is a
+  self-verifying smoke test.
+- `scripts/smoke.mjs`: smoke test against the built `dist/` output.
 
 ### Fixed
 - Security: `className` and `id` passed to `toHTML` were written into attributes without escaping, allowing attribute injection. They are now escaped, and `'` is escaped as `&#39;` everywhere.
@@ -39,7 +67,7 @@ specification, executed shared vectors, and claims that match the code.
 
 ### Corrected claims
 - The 1.0.0 entry below listed pivot tables, per-locale number and date formatting, column type overrides, a streaming API, and encoding handling. None of these were implemented. They are kept below for history but marked as not implemented; see the known limitations in `docs/full_summary_project_LombokCSV_v1.1.0.md`.
-- The README no longer advertises PyPI, Packagist, or Go packages or unmeasured performance figures.
+- The README no longer advertises unmeasured performance figures; registry statuses are shown as pending until the first tag is published.
 
 ## [1.0.0] — 2026-08-24
 

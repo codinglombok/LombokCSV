@@ -1,35 +1,50 @@
 # LombokCSV — Map v1.1.0
 
-## 1. Posisi di ekosistem
+## 1. Position in the ecosystem
 
 ```
-Cluster 03 Format, Parser & Serialisasi · tingkat L0 (tanpa dependensi Lombok wajib)
+Cluster 03 Format, Parser & Serialisation · level L0 (no mandatory Lombok dependencies)
 
 L0  LombokCSV
-     dependensi wajib : (tidak ada)
-     dependensi opsional : (tidak ada saat ini; rencana: LombokLocale untuk katalog pesan)
-     dependensi dev   : lombokfuzzer (fuzz harness)
+     mandatory dependencies : (none)
+     optional dependencies  : (none today; planned: LombokLocale for message catalogues)
+     dev dependencies       : lombokfuzzer (fuzz harness)
 ```
 
-## 2. Contoh pemakai di ekosistem
+## 2. Example consumers in the ecosystem
 
-Library ini mandiri dan dapat dipakai siapa pun. Aplikasi dan library Lombok yang dapat memakainya (arah dependensi selalu pemakai ke library):
+The library is standalone and usable by anyone. Lombok applications and libraries that can use it (the dependency direction is always consumer -> library):
 
-| Pemakai | Pemakaian |
+| Consumer | Usage |
 |---|---|
-| LombokPDF (aplikasi) | memasukkan tabel CSV ke dokumen |
-| LombokRAGFrameworks (aplikasi) | loader CSV |
-| LombokClarion (framework, opsional) | pratinjau impor data |
+| LombokPDF (application) | embedding CSV tables into documents |
+| LombokRAGFrameworks (application) | CSV loader |
+| LombokClarion (framework, optional) | data-import preview |
 
-## 3. Peta fitur x port
+## 3. Feature x port map
 
-| Fitur | TypeScript | Python | Go | PHP |
+| Feature | TypeScript | Python | Go | PHP |
 |---|---|---|---|---|
-| parseRows / parse / tipe | YA (lulus vector) | stub | stub | stub |
-| toHTML | YA (lulus vector) | stub | stub | stub |
-| toJSON | YA (lulus vector) | stub | stub | stub |
-| aggregate | YA (lulus vector) | stub | stub | stub |
+| parseRows / parse / types | YES (vectors pass) | YES (vectors pass) | YES (vectors pass) | YES (vectors pass) |
+| toHTML | YES | YES | YES | YES |
+| toJSON | YES | YES | YES | YES |
+| aggregate | YES | YES | YES | YES |
 
-YA = runner vector lulus 100%. stub = hanya README rencana, belum ada kode (GP-11).
+All four ports run the same 152 shared cases (`vectors/lombokcsv-vectors-v1.json`) in CI on three operating systems; a port is listed only when its runner passes every case (GP-11).
 
-*Lisensi dokumen: Apache-2.0 · © codinglombok*
+## 4. Cross-repo dependency graph
+
+```
+                  LombokVector (senior reference repo, structure + CI/release pattern)
+                        |  pattern only (no code dependency)
+                        v
+LombokCSV  <-------- consumers (LombokPDF, LombokRAGFrameworks, LombokClarion, ...)
+     |
+     +-- dev: lombokfuzzer (npm)
+```
+
+LombokCSV has no file:, path:, or version dependency on any other ecosystem repository; the only ecosystem coupling is the shared doctor/CI convention.
+
+---
+
+*Document license: Apache-2.0 · © codinglombok*
