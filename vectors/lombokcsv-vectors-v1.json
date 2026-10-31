@@ -713,7 +713,8 @@
    },
    "call": "parseRows",
    "expected": {
-    "code": "INVALID_OPTION"
+    "code": "INVALID_OPTION",
+    "message": "[INVALID_OPTION] delimiter must be a single character other than CR/LF"
    }
   },
   {
@@ -725,7 +726,8 @@
    },
    "call": "parseRows",
    "expected": {
-    "code": "INVALID_OPTION"
+    "code": "INVALID_OPTION",
+    "message": "[INVALID_OPTION] delimiter must be a single character other than CR/LF"
    }
   },
   {
@@ -737,7 +739,8 @@
    },
    "call": "parseRows",
    "expected": {
-    "code": "INVALID_OPTION"
+    "code": "INVALID_OPTION",
+    "message": "[INVALID_OPTION] delimiter must be a single character other than CR/LF"
    }
   },
   {
@@ -749,7 +752,8 @@
    },
    "call": "parseRows",
    "expected": {
-    "code": "INVALID_OPTION"
+    "code": "INVALID_OPTION",
+    "message": "[INVALID_OPTION] quote must be a single character other than CR/LF"
    }
   },
   {
@@ -761,7 +765,8 @@
    },
    "call": "parseRows",
    "expected": {
-    "code": "INVALID_OPTION"
+    "code": "INVALID_OPTION",
+    "message": "[INVALID_OPTION] delimiter and quote must differ"
    }
   },
   {
@@ -773,7 +778,8 @@
    },
    "call": "parseRows",
    "expected": {
-    "code": "INVALID_OPTION"
+    "code": "INVALID_OPTION",
+    "message": "[INVALID_OPTION] quote must be a single character other than CR/LF"
    }
   },
   {
@@ -2215,7 +2221,8 @@
     "count": true
    },
    "expected": {
-    "code": "UNKNOWN_COLUMN"
+    "code": "UNKNOWN_COLUMN",
+    "message": "[UNKNOWN_COLUMN] unknown column: Missing"
    }
   },
   {
@@ -2230,7 +2237,8 @@
     ]
    },
    "expected": {
-    "code": "UNKNOWN_COLUMN"
+    "code": "UNKNOWN_COLUMN",
+    "message": "[UNKNOWN_COLUMN] unknown column: Missing"
    }
   },
   {
@@ -2245,7 +2253,8 @@
     ]
    },
    "expected": {
-    "code": "UNKNOWN_COLUMN"
+    "code": "UNKNOWN_COLUMN",
+    "message": "[UNKNOWN_COLUMN] unknown column: Missing"
    }
   },
   {
@@ -2257,7 +2266,8 @@
     "groupBy": 3
    },
    "expected": {
-    "code": "UNKNOWN_COLUMN"
+    "code": "UNKNOWN_COLUMN",
+    "message": "[UNKNOWN_COLUMN] column index out of range: 3"
    }
   },
   {
@@ -2269,7 +2279,8 @@
     "groupBy": -1
    },
    "expected": {
-    "code": "UNKNOWN_COLUMN"
+    "code": "UNKNOWN_COLUMN",
+    "message": "[UNKNOWN_COLUMN] column index out of range: -1"
    }
   },
   {
@@ -2281,7 +2292,8 @@
     "groupBy": 1.5
    },
    "expected": {
-    "code": "UNKNOWN_COLUMN"
+    "code": "UNKNOWN_COLUMN",
+    "message": "[UNKNOWN_COLUMN] column index out of range: 1.5"
    }
   },
   {
@@ -2296,7 +2308,8 @@
     "groupBy": "1"
    },
    "expected": {
-    "code": "UNKNOWN_COLUMN"
+    "code": "UNKNOWN_COLUMN",
+    "message": "[UNKNOWN_COLUMN] unknown column: 1"
    }
   }
  ]

@@ -2,7 +2,9 @@
 """Builds vectors/lombokcsv-vectors-v1.json from hand-written cases.
 
 Every expected value below is written by hand from SPEC_LombokCSV, never produced
-by running an implementation (GP-11). After editing, run:
+by running an implementation (GP-11). Error cases pin both the stable `code`
+and the canonical `[CODE] message` text from SPEC section 7, so every language
+port must reproduce identical messages. After editing, run:
 
     python3 vectors/build_vectors.py
     sha256sum vectors/lombokcsv-vectors-v1.json > vectors/SHA256SUMS
@@ -83,14 +85,15 @@ add(R, "a\n1,2,3", [["a"], ["1", "2", "3"]])
 add(R, "\r\n\r\n", [])
 add(R, "x\r\r\ny", [["x"], ["y"]])
 
-# --- §2.4 option errors ------------------------------------------------------
+# --- §2.4 option errors (message text is canonical, SPEC §7) -----------------
 E = "error"
-add(E, "a,b", {"code": "INVALID_OPTION"}, {"delimiter": ""}, call="parseRows")
-add(E, "a,b", {"code": "INVALID_OPTION"}, {"delimiter": ";;"}, call="parseRows")
-add(E, "a,b", {"code": "INVALID_OPTION"}, {"delimiter": "\n"}, call="parseRows")
-add(E, "a,b", {"code": "INVALID_OPTION"}, {"quote": "\r"}, call="parseRows")
-add(E, "a,b", {"code": "INVALID_OPTION"}, {"delimiter": '"'}, call="parseRows")
-add(E, "a,b", {"code": "INVALID_OPTION"}, {"quote": ""}, call="parseRows")
+M_OPT = "[INVALID_OPTION] {0} must be a single character other than CR/LF"
+add(E, "a,b", {"code": "INVALID_OPTION", "message": M_OPT.format("delimiter")}, {"delimiter": ""}, call="parseRows")
+add(E, "a,b", {"code": "INVALID_OPTION", "message": M_OPT.format("delimiter")}, {"delimiter": ";;"}, call="parseRows")
+add(E, "a,b", {"code": "INVALID_OPTION", "message": M_OPT.format("delimiter")}, {"delimiter": "\n"}, call="parseRows")
+add(E, "a,b", {"code": "INVALID_OPTION", "message": M_OPT.format("quote")}, {"quote": "\r"}, call="parseRows")
+add(E, "a,b", {"code": "INVALID_OPTION", "message": "[INVALID_OPTION] delimiter and quote must differ"}, {"delimiter": '"'}, call="parseRows")
+add(E, "a,b", {"code": "INVALID_OPTION", "message": M_OPT.format("quote")}, {"quote": ""}, call="parseRows")
 
 # --- §3 types: parse(input, options) -> {headers, rows, types} ---------------
 P = "parse"
@@ -213,13 +216,15 @@ add(A, "g,v\nx, 7 ", [{"g": "x", "v_sum": 7}], {"trim": False}, agg={"groupBy": 
 add(A, "g,v", [], agg={"groupBy": "g", "count": True})
 add(A, "g,v\nx,1", [{"g": "x", "v_sum": 1}], agg={"groupBy": "g", "sum": ["v"], "count": False})
 
-add(E, D, {"code": "UNKNOWN_COLUMN"}, call="aggregate", agg={"groupBy": "Missing", "count": True})
-add(E, D, {"code": "UNKNOWN_COLUMN"}, call="aggregate", agg={"groupBy": 0, "sum": ["Missing"]})
-add(E, D, {"code": "UNKNOWN_COLUMN"}, call="aggregate", agg={"groupBy": 0, "avg": ["Missing"]})
-add(E, D, {"code": "UNKNOWN_COLUMN"}, call="aggregate", agg={"groupBy": 3})
-add(E, D, {"code": "UNKNOWN_COLUMN"}, call="aggregate", agg={"groupBy": -1})
-add(E, D, {"code": "UNKNOWN_COLUMN"}, call="aggregate", agg={"groupBy": 1.5})
-add(E, "1,2", {"code": "UNKNOWN_COLUMN"}, {"hasHeader": False}, call="aggregate", agg={"groupBy": "1"})
+M_UNKNOWN = "[UNKNOWN_COLUMN] unknown column: {0}"
+M_RANGE = "[UNKNOWN_COLUMN] column index out of range: {0}"
+add(E, D, {"code": "UNKNOWN_COLUMN", "message": M_UNKNOWN.format("Missing")}, call="aggregate", agg={"groupBy": "Missing", "count": True})
+add(E, D, {"code": "UNKNOWN_COLUMN", "message": M_UNKNOWN.format("Missing")}, call="aggregate", agg={"groupBy": 0, "sum": ["Missing"]})
+add(E, D, {"code": "UNKNOWN_COLUMN", "message": M_UNKNOWN.format("Missing")}, call="aggregate", agg={"groupBy": 0, "avg": ["Missing"]})
+add(E, D, {"code": "UNKNOWN_COLUMN", "message": M_RANGE.format(3)}, call="aggregate", agg={"groupBy": 3})
+add(E, D, {"code": "UNKNOWN_COLUMN", "message": M_RANGE.format(-1)}, call="aggregate", agg={"groupBy": -1})
+add(E, D, {"code": "UNKNOWN_COLUMN", "message": M_RANGE.format(1.5)}, call="aggregate", agg={"groupBy": 1.5})
+add(E, "1,2", {"code": "UNKNOWN_COLUMN", "message": M_UNKNOWN.format("1")}, {"hasHeader": False}, call="aggregate", agg={"groupBy": "1"})
 
 doc = {
     "name": "lombokcsv-vectors",
