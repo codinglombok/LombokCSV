@@ -2,151 +2,173 @@
 
 This document is the normative cross-language contract. Every language port MUST produce byte-identical output for all specified inputs. Deviations from this specification are bugs.
 
-| Atribut | Nilai |
+| Attribute | Value |
 |---|---|
-| Versi SPEC | 1.1.0 (berlaku untuk paket `lombokcsv` 1.1.x) |
-| Standar acuan | RFC 4180 (Oktober 2005) untuk format record; WHATWG HTML Living Standard (tinjauan 2026-10-01) untuk escaping keluaran HTML; ISO 8601-1:2019 untuk pola tanggal |
-| Vector | `vectors/lombokcsv-vectors-v1.json` — 152 kasus — SHA-256 `be1b3c9fad212348b794be7099a78b02b69440ddf87f6fd498338ca981c7bccd` |
-| Referensi | TypeScript (`src/csv.ts`) |
-| Tanggal tinjauan | 2026-10-01 |
+| SPEC version | 1.1.0 (applies to the `lombokcsv` package 1.1.x) |
+| Reference standards | RFC 4180 (October 2005) for the record format; WHATWG HTML Living Standard (reviewed 2026-10-01) for HTML output escaping; ISO 8601-1:2019 for date patterns |
+| Vectors | `vectors/lombokcsv-vectors-v1.json` — 152 cases — SHA-256 `83c208af06e530592ff721735dbc6f0ef9814d40d87643679f687a7424c1b420` |
+| Reference implementation | TypeScript (`src/csv.ts`) |
+| Ports | TypeScript (root), Python (`python/`), Go (`go/`), PHP (`php/`) — all consume the vector file above |
+| Review date | 2026-10-01 |
 
-Kata MUST, MUST NOT, SHOULD, MAY mengikuti RFC 2119.
+The key words MUST, MUST NOT, SHOULD, MAY are to be interpreted as described in RFC 2119.
 
-## 0. Konvensi
+## 0. Conventions
 
-1. Masukan adalah string Unicode. Port yang bekerja atas byte MUST mendekode UTF-8 lebih dulu; pemrosesan berikut dinyatakan atas unit karakter. Delimiter, quote, CR, LF, SPACE, TAB semuanya karakter ASCII, sehingga hasil tidak bergantung pada pilihan unit (UTF-16 atau code point).
-2. "Whitespace kosong" (blank) = SPACE (U+0020) dan TAB (U+0009).
-3. "Strip" = membuang SPACE, TAB, CR (U+000D), LF (U+000A) di kedua ujung. Karakter whitespace Unicode lain (NBSP, U+FEFF, dst.) MUST NOT dibuang.
-4. Urutan kunci objek keluaran adalah bagian dari kontrak (§5.4, §6). Vector dibandingkan sebagai JSON kanonik (`JSON.stringify` tanpa spasi; angka mengikuti format angka ECMAScript). Pengecualian: urutan kunci yang berupa indeks bilangan bulat kanonik (mis. header `"0"`, `"12"`) tidak normatif, karena objek ECMAScript selalu menaruhnya di depan; data seperti itu MUST dibandingkan sebagai objek, dan vector tidak memuatnya.
+1. Input is Unicode text. Ports that operate on bytes MUST decode UTF-8 first; all further processing is specified over characters. Delimiter, quote, CR, LF, SPACE and TAB are ASCII, so results do not depend on the unit chosen (UTF-16 code unit or code point).
+2. "Blank" means SPACE (U+0020) and TAB (U+0009) only.
+3. "Strip" means removing SPACE, TAB, CR (U+000D) and LF (U+000A) from both ends. Other Unicode whitespace (NBSP, U+FEFF, ...) MUST NOT be removed.
+4. Option `delimiter` and `quote` MUST be exactly one UTF-16 code unit in the reference implementation (a single code point no greater than U+FFFF). Ports MUST reject surrogate-pair characters the same way.
+5. Vector comparison semantics (normative for every port runner): values are compared structurally — strings byte-exact; numbers by IEEE 754 binary64 equality (an integral-valued double and the corresponding integer are equal; `1001.0 == 1001`); booleans and null by identity; arrays element-wise in order; objects by key sequence (insertion order) and then values, so object key order is part of the contract. The TypeScript runner implements this via `JSON.stringify` canonical form (ECMAScript number formatting, no spaces). Exception: the order of keys that are canonical integer indices (e.g. headers `"0"`, `"12"`) is not normative, because ECMAScript objects always move them to the front; such data MUST be compared as objects and the vectors do not contain it.
 
-## 1. Opsi
+## 1. Options
 
-| Opsi | Bawaan | Aturan |
+| Option | Default | Rule |
 |---|---|---|
-| `delimiter` | `,` | MUST tepat satu karakter, bukan CR/LF |
-| `quote` | `"` | MUST tepat satu karakter, bukan CR/LF, berbeda dari `delimiter` |
-| `hasHeader` | `true` | record pertama menjadi header |
-| `trim` | `true` | buang blank di sekitar isi field yang tidak di-quote (§2.3) |
-| `escape` | — | usang (deprecated), MUST diabaikan |
+| `delimiter` | `,` | MUST be exactly one character, not CR/LF |
+| `quote` | `"` | MUST be exactly one character, not CR/LF, and different from `delimiter` |
+| `hasHeader` | `true` | first record is the header row |
+| `trim` | `true` | remove blanks around unquoted field content (§2.3) |
+| `escape` | — | deprecated, MUST be ignored |
 
-Pelanggaran aturan opsi MUST menghasilkan error berkode `INVALID_OPTION` saat parser dibuat.
+Violating an option rule MUST produce an error with code `INVALID_OPTION` when the parser is constructed.
 
-## 2. Record (`parseRows`)
+## 2. Records (`parseRows`)
 
-### 2.1 Pra-proses
+### 2.1 Preprocessing
 
-Jika karakter pertama masukan adalah U+FEFF (BOM), karakter itu MUST dibuang. U+FEFF di posisi lain adalah data biasa.
+If the first character of the input is U+FEFF (BOM), that character MUST be removed. U+FEFF anywhere else is ordinary data.
 
-### 2.2 Mesin keadaan
+### 2.2 State machine
 
-Parser memproses masukan dari kiri ke kanan dengan empat keadaan: `START` (awal field), `UNQUOTED`, `QUOTED`, `AFTER_QUOTE`.
+The parser processes input left to right with four states: `START` (field start), `UNQUOTED`, `QUOTED`, `AFTER_QUOTE`.
 
-| Keadaan | Karakter | Tindakan |
+| State | Character | Action |
 |---|---|---|
-| `QUOTED` | quote diikuti quote | tambahkan satu quote ke field, lewati dua karakter |
-| `QUOTED` | quote tunggal | pindah ke `AFTER_QUOTE` |
-| `QUOTED` | lainnya (termasuk CR, LF, delimiter) | tambahkan ke field |
-| selain `QUOTED` | delimiter | akhiri field |
-| selain `QUOTED` | CR, LF, atau pasangan CR LF | akhiri field lalu akhiri record |
-| `START` | quote | field ditandai *quoted*, pindah ke `QUOTED` |
-| `START` | blank dan `trim = true` | abaikan |
-| `START` | lainnya | tambahkan ke field, pindah ke `UNQUOTED` |
-| `UNQUOTED` | lainnya (termasuk quote) | tambahkan ke field (quote di tengah field adalah literal) |
-| `AFTER_QUOTE` | blank dan `trim = true` | abaikan |
-| `AFTER_QUOTE` | lainnya | tambahkan ke field secara literal (toleran, bukan error) |
+| `QUOTED` | quote followed by quote | append one quote to the field, skip two characters |
+| `QUOTED` | single quote | move to `AFTER_QUOTE` |
+| `QUOTED` | anything else (including CR, LF, delimiter) | append to the field |
+| other than `QUOTED` | delimiter | end the field |
+| other than `QUOTED` | CR, LF, or the CR LF pair | end the field, then end the record |
+| `START` | quote | mark the field *quoted*, move to `QUOTED` |
+| `START` | blank and `trim = true` | ignore |
+| `START` | anything else | append to the field, move to `UNQUOTED` |
+| `UNQUOTED` | anything else (including a quote) | append to the field (a quote inside an unquoted field is literal) |
+| `AFTER_QUOTE` | blank and `trim = true` | ignore |
+| `AFTER_QUOTE` | anything else | append to the field literally (lenient, not an error) |
 
-Akhir masukan: bila keadaan bukan `START` atau record berjalan sudah memiliki field, field dan record diakhiri. Quote yang tidak ditutup (masukan berakhir di `QUOTED`) bukan error: isi yang terkumpul menjadi nilai field.
+End of input: if the state is not `START`, or the running record already has fields, the field and record are ended. An unterminated quote (input ends in `QUOTED`) is not an error: the content gathered so far becomes the field value.
 
-### 2.3 Nilai field
+### 2.3 Field values
 
-Saat field diakhiri: bila `trim = true` dan field tidak *quoted*, blank di ujung kanan MUST dibuang (blank di kiri sudah diabaikan di `START`). Isi field yang di-quote MUST dipertahankan apa adanya.
+When a field ends: if `trim = true` and the field is not *quoted*, trailing blanks MUST be removed (leading blanks were already ignored in `START`). Quoted field content MUST be preserved exactly as-is.
 
-### 2.4 Baris kosong
+### 2.4 Empty lines
 
-Record yang terdiri atas tepat satu field kosong yang tidak di-quote MUST dibuang (baris kosong, termasuk baris yang hanya berisi blank bila `trim = true`). Baris `""` menghasilkan record berisi satu field kosong. Baris `,` menghasilkan dua field kosong.
+A record consisting of exactly one empty unquoted field MUST be dropped (an empty line, including a line holding only blanks when `trim = true`). The line `""` yields a record with one empty field. The line `,` yields two empty fields.
 
-### 2.5 Panjang record
+### 2.5 Record length
 
-Record MAY berbeda panjang; parser MUST NOT menambah atau memotong field.
+Records MAY differ in length; the parser MUST NOT pad or truncate fields.
 
-## 3. Header dan tipe (`parse`)
+## 3. Header and types (`parse`)
 
-1. Bila tidak ada record: hasil `{headers: tidak ada, rows: [], types: []}` (di vector ditulis `null`).
-2. Bila `hasHeader = true`: record pertama menjadi `headers`, sisanya `rows`.
-3. Jumlah kolom tipe = panjang record terpanjang di `rows` (header tidak ikut dihitung). Bila `rows` kosong, `types = []`.
-4. Untuk setiap kolom, periksa nilai di `TYPE_SAMPLE_ROWS = 10` baris pertama setelah di-strip (§0.3); nilai kosong dilewati.
-5. Tipe kolom: `number` bila semua nilai cocok pola angka; jika tidak, `date` bila semua cocok pola tanggal; jika tidak, `boolean` bila semua cocok pola boolean; selain itu (termasuk kolom tanpa nilai) `string`.
+1. With no records: the result is `{headers: absent, rows: [], types: []}` (written as `null` in the vectors).
+2. With `hasHeader = true`: the first record becomes `headers`, the rest become `rows`.
+3. The number of type columns equals the length of the longest record in `rows` (the header is not counted). With empty `rows`, `types = []`.
+4. For each column, inspect the values in the first `TYPE_SAMPLE_ROWS = 10` rows after stripping (§0.3); empty values are skipped.
+5. Column type: `number` if all values match the number pattern; otherwise `date` if all match a date pattern; otherwise `boolean` if all match the boolean pattern; otherwise (including a column with no values) `string`.
 
-### 3.1 Pola (ekspresi reguler, seluruh nilai harus cocok)
+### 3.1 Patterns (regular expressions; every value must match)
 
-| Tipe | Pola |
+| Type | Pattern |
 |---|---|
-| number | `^-?(\d+\.?\d*|\.\d+)([eE][+-]?\d+)?$` (tanpa `+`, tanpa pemisah ribuan, tanpa `NaN`/`Infinity`/heksadesimal) |
+| number | `^-?(\d+\.?\d*|\.\d+)([eE][+-]?\d+)?$` (no `+` sign, no thousands separator, no `NaN`/`Infinity`/hexadecimal) |
 | date | `^\d{4}-\d{2}-\d{2}$` · `^\d{4}-\d{2}-\d{2}[T ]\d{2}:\d{2}(:\d{2}(\.\d+)?)?(Z|[+-]\d{2}:?\d{2})?$` · `^\d{1,2}/\d{1,2}/\d{4}$` · `^\d{1,2}-\d{1,2}-\d{4}$` |
-| boolean | `^(true|false|yes|no|1|0)$`, tidak peka huruf besar |
+| boolean | `^(true|false|yes|no|1|0)$`, case-insensitive |
 
-`\d` berarti ASCII 0-9 saja. Pola tanggal memeriksa bentuk, bukan validitas kalender.
+`\d` means ASCII 0-9 only. Date patterns check shape, not calendar validity.
 
 ## 4. HTML (`toHTML`)
 
-Keluaran MUST tepat mengikuti templat berikut (`\n` = LF), tanpa spasi tambahan:
+The output MUST exactly follow this template (`\n` = LF), with no extra spaces:
 
 ```
 <table{class}{id}>\n
-[<thead>\n<tr>\n(<th>{h}</th>\n)*</tr>\n</thead>\n]     -- hanya bila headers ada dan tidak kosong
+[<thead>\n<tr>\n(<th>{h}</th>\n)*</tr>\n</thead>\n]     -- only when headers exist and are non-empty
 <tbody>\n
-(<tr>\n(<td{align}>{v}</td>\n)*</tr>\n)*                -- satu <td> per field yang ada di record
-</tbody>\n</table>                                     -- tanpa LF penutup
+(<tr>\n(<td{align}>{v}</td>\n)*</tr>\n)*                -- one <td> per field present in the record
+</tbody>\n</table>                                     -- no trailing LF
 ```
 
-- `{class}` = ` class="<esc(className)>"` bila `className` tidak kosong; `{id}` = ` id="<esc(id)>"` bila `id` tidak kosong.
-- `{align}` = ` style="text-align: right"` bila tipe kolom itu `number`.
-- `esc` mengganti, berurutan: `&` menjadi `&amp;`, `<` menjadi `&lt;`, `>` menjadi `&gt;`, `"` menjadi `&quot;`, `'` menjadi `&#39;`. Fungsi yang sama dipakai untuk isi sel dan nilai atribut.
+- `{class}` = ` class="<esc(className)>"` when `className` is non-empty; `{id}` = ` id="<esc(id)>"` when `id` is non-empty.
+- `{align}` = ` style="text-align: right"` when that column's type is `number`.
+- `esc` replaces, in order: `&` with `&amp;`, `<` with `&lt;`, `>` with `&gt;`, `"` with `&quot;`, `'` with `&#39;`. The same function is used for cell content and attribute values.
 
-## 5. Agregasi (`aggregate`)
+## 5. Aggregation (`aggregate`)
 
-### 5.1 Resolusi kolom
+### 5.1 Column resolution
 
-Kolom dapat berupa nama (string) atau indeks (bilangan). Nama dicari dengan kesamaan string persis pada `headers` (kemunculan pertama). Indeks MUST bilangan bulat `0 <= i < lebar`, dengan lebar = maksimum panjang `headers` dan panjang record di `rows`. Nama yang tidak ada, nama ketika tidak ada header, atau indeks di luar aturan MUST menghasilkan error `UNKNOWN_COLUMN`. Semua kolom (`groupBy`, `sum`, `avg`) diresolusi sebelum baris diproses.
+A column is either a name (string) or an index (number). Names are looked up by exact string comparison in `headers` (first occurrence). An index MUST be an integer with `0 <= i < width`, where width = maximum of the `headers` length and the lengths of the records in `rows`. A missing name, a name when there is no header row, or an index outside that rule MUST produce an `UNKNOWN_COLUMN` error. All columns (`groupBy`, `sum`, `avg`) are resolved before any row is processed.
 
-### 5.2 Nama kolom keluaran
+### 5.2 Output column names
 
-Nama kolom `i` = `headers[i]` bila ada, selain itu `col_<i>`.
+Name of column `i` = `headers[i]` when present, otherwise `col_<i>`.
 
-### 5.3 Pengelompokan dan nilai
+### 5.3 Grouping and values
 
-1. Kunci grup = nilai sel kolom `groupBy` apa adanya (tanpa strip, peka huruf besar); sel yang tidak ada dianggap `""`.
-2. Grup muncul dalam urutan kemunculan pertama.
-3. Nilai numerik sebuah sel = sel di-strip lalu, bila cocok pola angka §3.1, dikonversi ke IEEE 754 binary64 (pembulatan terdekat). Sel yang tidak cocok diabaikan.
-4. `<nama>_sum` = jumlah nilai numerik, dijumlahkan kiri-ke-kanan menurut urutan baris, mulai dari 0.
-5. `<nama>_avg` = (jumlah seperti butir 4) dibagi banyak nilai numerik; `null` bila tidak ada nilai numerik.
-6. `count` = banyak baris dalam grup (termasuk baris dengan sel kosong).
+1. The group key is the cell value of the `groupBy` column as-is (no stripping, case-sensitive); a missing cell is treated as `""`.
+2. Groups appear in first-occurrence order.
+3. The numeric value of a cell = the cell stripped and, when it matches the number pattern (§3.1), converted to IEEE 754 binary64 (round to nearest). Cells that do not match are ignored.
+4. `<name>_sum` = the sum of the numeric values, added left-to-right in row order, starting from 0.
+5. `<name>_avg` = (the sum as in item 4) divided by the count of numeric values; `null` when there are none.
+6. `count` = the number of rows in the group (including rows with empty cells).
 
-### 5.4 Bentuk keluaran
+### 5.4 Output shape
 
-Satu objek per grup dengan kunci berurutan: `<nama groupBy>`, lalu `<nama>_sum` untuk setiap kolom `sum` (urutan opsi), lalu `<nama>_avg` untuk setiap kolom `avg`, lalu `count` bila `count = true`. Bila dua kunci bertabrakan, nilai yang ditulis terakhir menang dan posisi kunci mengikuti penulisan pertama.
+One object per group with keys in order: `<groupBy name>`, then `<name>_sum` for every `sum` column (option order), then `<name>_avg` for every `avg` column, then `count` when `count = true`. When two keys collide, the value written last wins and the key keeps the position of its first write.
 
 ## 6. JSON (`toJSON`)
 
-Tanpa header: kembalikan `rows`. Dengan header: satu objek per baris; kunci mengikuti urutan `headers`; sel yang tidak ada menjadi `""`; sel melebihi jumlah header dibuang; untuk nama header ganda, kolom terakhir menang (posisi kunci mengikuti kemunculan pertama).
+Without a header row: return `rows`. With a header row: one object per row; keys follow the `headers` order; missing cells become `""`; cells beyond the number of headers are dropped; for duplicate header names the last column wins (the key keeps the position of its first occurrence).
 
-## 7. Error
+## 7. Errors
 
-| Kode | Kapan |
+| Code | When |
 |---|---|
 | `INVALID_OPTION` | §1 |
 | `UNKNOWN_COLUMN` | §5.1 |
 
-Port MUST mengekspos `code` sebagai string persis di atas. Teks pesan informatif dan MAY berbeda antar port.
+Ports MUST expose `code` as the exact string above. The message text is also normative and MUST be byte-identical in every port; it is prefixed with the code in brackets:
 
-## 8. Keamanan (normatif)
+| Situation | Canonical message |
+|---|---|
+| `delimiter` invalid | `[INVALID_OPTION] delimiter must be a single character other than CR/LF` |
+| `quote` invalid | `[INVALID_OPTION] quote must be a single character other than CR/LF` |
+| `delimiter` equals `quote` | `[INVALID_OPTION] delimiter and quote must differ` |
+| unknown column name `<x>` | `[UNKNOWN_COLUMN] unknown column: <x>` |
+| column index `<n>` out of range | `[UNKNOWN_COLUMN] column index out of range: <n>` |
 
-1. Parser MUST berjalan dalam waktu linier terhadap panjang masukan dan MUST NOT melempar error untuk masukan apa pun (hanya opsi yang dapat memicu error).
-2. `toHTML` MUST meng-escape setiap teks yang berasal dari masukan atau opsi (§4). Keluaran aman disisipkan sebagai isi elemen; tidak dirancang untuk disisipkan di dalam `<script>`/`<style>` atau atribut tanpa tanda kutip.
-3. Library tidak melakukan I/O, tidak mengevaluasi rumus, dan tidak melindungi dari *CSV injection* (sel yang diawali `=`, `+`, `-`, `@`) ketika data diekspor kembali ke spreadsheet; itu tanggung jawab pemanggil.
+In the index message, `<n>` is formatted with the shortest round-trip decimal representation of the binary64 value (`3`, `-1`, `1.5`); programs MUST match on `code`, not on message text.
 
-## 9. Perubahan dari 1.0.0
+## 8. Security (normative)
 
-Lihat `CHANGELOG.md` bagian 1.1.0. Ringkasnya: isi field yang di-quote tidak lagi di-trim; quote di tengah field tak-ber-quote menjadi literal; BOM dibuang; pola tanggal dijangkar penuh; atribut `class`/`id` di-escape; kolom tak dikenal menjadi error; `_avg` tidak lagi menyertakan kunci bantu `_count` dan mengabaikan sel non-angka; nama grup tanpa header memakai `col_<i>`.
+1. The parser MUST run in time linear in the input length and MUST NOT throw for any input (only options can trigger errors).
+2. `toHTML` MUST escape every piece of text derived from input or options (§4). The output is safe to insert as element content; it is not designed to be inserted inside `<script>`/`<style>` or unquoted attributes.
+3. The library performs no I/O, evaluates nothing, and does not protect against CSV (formula) injection (cells starting with `=`, `+`, `-`, `@`) when data is exported back to a spreadsheet; that is the caller's responsibility.
 
-*Lisensi dokumen: Apache-2.0 · © codinglombok*
+## 9. Changes from 1.0.0
+
+See `CHANGELOG.md`, section 1.1.0. In short: quoted field content is no longer trimmed; a quote inside an unquoted field is literal; the BOM is removed; date patterns are fully anchored; the `class`/`id` attributes are escaped; unknown columns are errors; `_avg` no longer emits a helper `_count` key and ignores non-numeric cells; group names without a header use `col_<i>`; error messages gained the canonical `[CODE] ` prefix.
+
+## 10. Vectors
+
+- File: `vectors/lombokcsv-vectors-v1.json` — 152 cases (`parseRows` 56, `parse` 39, `aggregate` 20, `toHTML` 15, `error` 13, `toJSON` 9).
+- SHA-256: `83c208af06e530592ff721735dbc6f0ef9814d40d87643679f687a7424c1b420` (also pinned in `vectors/SHA256SUMS`).
+- Source: `vectors/build_vectors.py` — expected values are hand-written from this SPEC, never copied from an implementation's output; error cases pin the canonical messages of §7.
+- Regenerate with `python3 vectors/build_vectors.py`, then `sha256sum vectors/lombokcsv-vectors-v1.json > vectors/SHA256SUMS` and update the hash in this document. CI fails when the file, its source, and `SHA256SUMS` disagree.
+- Every port MUST ship a runner that executes every case and compares results with the semantics of §0.5.
+
+---
+
+*Document license: Apache-2.0 · © codinglombok*
