@@ -16,6 +16,23 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  detect:
+    name: Detect ports
+    runs-on: ubuntu-latest
+    outputs:
+      python: ${{ steps.ports.outputs.python }}
+      go: ${{ steps.ports.outputs.go }}
+      php: ${{ steps.ports.outputs.php }}
+      docker: ${{ steps.ports.outputs.docker }}
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+      - id: ports
+        run: |
+          echo "python=$([ -n "$(find python -name '*.py' -print -quit 2>/dev/null)" ] && echo true || echo false)" >> "$GITHUB_OUTPUT"
+          echo "go=$([ -n "$(find go -name '*.go' -print -quit 2>/dev/null)" ] && echo true || echo false)" >> "$GITHUB_OUTPUT"
+          echo "php=$([ -n "$(find php -name '*.php' -print -quit 2>/dev/null)" ] && echo true || echo false)" >> "$GITHUB_OUTPUT"
+          echo "docker=$([ -f Dockerfile ] && echo true || echo false)" >> "$GITHUB_OUTPUT"
+
   typescript:
     name: TypeScript (${{ matrix.os }}, Node ${{ matrix.node }})
     runs-on: ${{ matrix.os }}
@@ -41,7 +58,8 @@ jobs:
 
   python:
     name: Python ${{ matrix.python }} (${{ matrix.os }})
-    if: ${{ hashFiles('python/**/*.py') != '' }}
+    needs: detect
+    if: needs.detect.outputs.python == 'true'
     runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false
@@ -63,7 +81,8 @@ jobs:
 
   go:
     name: Go ${{ matrix.go }} (${{ matrix.os }})
-    if: ${{ hashFiles('go/**/*.go') != '' }}
+    needs: detect
+    if: needs.detect.outputs.go == 'true'
     runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false
@@ -95,7 +114,8 @@ jobs:
 
   php:
     name: PHP ${{ matrix.php }} (${{ matrix.os }})
-    if: ${{ hashFiles('php/**/*.php') != '' }}
+    needs: detect
+    if: needs.detect.outputs.php == 'true'
     runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false
@@ -122,7 +142,8 @@ jobs:
     # Every push must still produce a working image: the Dockerfile entrypoint
     # is the smoke test, so "docker run" exiting 0 proves the shipped artefact
     # computes the expected results.
-    if: ${{ hashFiles('Dockerfile') != '' }}
+    needs: detect
+    if: needs.detect.outputs.docker == 'true'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
