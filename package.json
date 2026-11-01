@@ -44,21 +44,30 @@
   "scripts": {
     "build": "tsup src/index.ts --format esm,cjs --dts --clean",
     "lint": "tsc --noEmit -p tsconfig.check.json",
+    "lint:eslint": "eslint .",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
     "test": "vitest --run",
     "coverage": "vitest --run --coverage",
     "fuzz": "npm run build && tsx tests/fuzz/csv.fuzz.ts",
     "vectors": "python3 vectors/build_vectors.py",
+    "smoke": "npm run build && node scripts/smoke.mjs",
     "doctor": "bash scripts/lombok-doctor.sh LombokCSV",
-    "check": "npm run lint && npm run coverage && npm run build && npm run doctor"
+    "check": "npm run lint && npm run lint:eslint && npm run format:check && npm run coverage && npm run build && npm run doctor"
   },
-  "dependencies": {},
   "devDependencies": {
+    "@eslint/js": "^10.0.1",
     "@types/node": "^22.0.0",
     "@vitest/coverage-v8": "^5.0.3",
+    "eslint": "^10.14.0",
+    "eslint-config-prettier": "^10.1.8",
+    "globals": "^17.13.0",
     "lombokfuzzer": "^0.1.0",
+    "prettier": "^3.9.10",
     "tsup": "^8.0.0",
     "vitest": "^5.0.3",
     "typescript": "^5.0.0",
+    "typescript-eslint": "^8.72.1",
     "vitest": "^5.0.3"
   },
   "repository": {

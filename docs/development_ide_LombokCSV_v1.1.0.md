@@ -1,41 +1,51 @@
 # LombokCSV — Development IDE v1.1.0
 
-## 1. Lingkungan
+## 1. Environment
 
-| Alat | Versi |
+| Tool | Version |
 |---|---|
-| Node.js | 20 LTS atau lebih baru (CI: 20, 22, 24) |
+| Node.js | 20 LTS or newer (CI: 20, 22, 24) |
 | npm | 10+ |
-| Editor | VS Code atau IDE apa pun dengan dukungan TypeScript |
-| Python | 3.10+ (hanya untuk `vectors/build_vectors.py`) |
-| Bash | untuk `scripts/lombok-doctor.sh` (Windows: Git Bash atau WSL) |
+| Editor | VS Code or any IDE with TypeScript support |
+| Python | 3.9+ (port and `vectors/build_vectors.py`) |
+| Go | 1.22+ (port) |
+| PHP | 8.1+ with pcov for the coverage gate (port) |
+| Bash | for `scripts/lombok-doctor.sh` and `scripts/bump_version.sh` (Windows: Git Bash or WSL) |
 
-## 2. Perintah
+## 2. Commands
 
-| Perintah | Fungsi |
+| Command | Purpose |
 |---|---|
-| `npm ci` | pasang dependensi dev sesuai lockfile |
+| `npm ci` | install dev dependencies from the lockfile |
 | `npm run lint` | `tsc --noEmit` (strict) |
-| `npm test` | unit + runner vector |
-| `npm run coverage` | test dengan ambang coverage 90% |
-| `npm run build` | `tsup` ke `dist/` (ESM + CJS + d.ts) |
-| `npm run fuzz` | fuzz parser dengan lombokfuzzer (`FUZZ_EXECUTIONS` mengatur jumlah) |
-| `npm run vectors` | bangun ulang berkas vector dari `vectors/build_vectors.py` |
-| `npm run doctor` | pemeriksaan standar Lombok v3.6 |
-| `npm run check` | lint + coverage + build + doctor |
+| `npm run lint:eslint` | ESLint flat config |
+| `npm run format:check` | Prettier check (generated files are ignored) |
+| `npm test` | unit + vector runner |
+| `npm run coverage` | tests with the 95/90 coverage threshold |
+| `npm run build` | `tsup` into `dist/` (ESM + CJS + d.ts) |
+| `npm run smoke` | smoke-test the built `dist/` output |
+| `npm run fuzz` | fuzz the parser with lombokfuzzer (`FUZZ_EXECUTIONS` sets the count) |
+| `npm run vectors` | rebuild the vector file from `vectors/build_vectors.py` |
+| `npm run doctor` | Lombok standards check (v3.7 D-ENV) |
+| `npm run check` | lint + eslint + prettier + coverage + build + doctor |
+| `python -m coverage run --branch --source=lombokcsv -m pytest -q` | Python port tests (in `python/`) |
+| `go test ./...` | Go port tests (in `go/`) |
+| `php php/tests/run.php` | PHP port tests (repo root; `--coverage=90` with pcov) |
 
-## 3. Alur mengubah perilaku
+## 3. Flow for changing behaviour
 
-1. Ubah SPEC lebih dulu.
-2. Tambah atau ubah kasus di `vectors/build_vectors.py`; nilai harapan ditulis tangan dari SPEC, bukan disalin dari keluaran kode.
-3. `npm run vectors`, lalu perbarui `vectors/SHA256SUMS` dan hash di SPEC.
-4. Ubah `src/csv.ts` sampai `npm test` hijau.
-5. Catat di `CHANGELOG.md` (entri terbaru di depan).
+1. Change the SPEC first.
+2. Add or change cases in `vectors/build_vectors.py`; expected values are hand-written from the SPEC, never copied from an implementation's output.
+3. `npm run vectors`, then update `vectors/SHA256SUMS` and the hash in the SPEC.
+4. Change `src/csv.ts` and every port until all four suites are green.
+5. Record the change in `CHANGELOG.md` (newest entries first).
 
-## 4. Arah pengembangan
+## 4. Development directions
 
-- Port Python sebagai pemeriksa referensi kedua (GP-11), lalu Go dan PHP.
-- API streaming berbasis potongan (chunk) dengan hasil identik dengan parse penuh.
-- Opsi angka lokal dan katalog pesan `locales/`.
+- Streaming API over chunks with results identical to the full parse.
+- Locale number options (`decimal: ','`) after their behaviour is specified in the SPEC and vectors.
+- Message catalogue `locales/` (see Lang_ §4).
 
-*Lisensi dokumen: Apache-2.0 · © codinglombok*
+---
+
+*Document license: Apache-2.0 · © codinglombok*

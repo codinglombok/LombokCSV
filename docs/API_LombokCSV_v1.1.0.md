@@ -1,33 +1,35 @@
 # LombokCSV — API v1.1.0
 
-Referensi API publik paket npm `lombokcsv` 1.1.0 (TypeScript, ESM + CommonJS). Perilaku normatif ada di [SPEC_](SPEC_LombokCSV_v1.1.0.md); dokumen ini menjelaskan bentuk pemanggilan.
+Public API reference for the `lombokcsv` packages 1.1.0 (TypeScript on npm; Python on PyPI; Go module `github.com/codinglombok/lombokcsv/go`; PHP on Packagist). Normative behaviour lives in the [SPEC](SPEC_LombokCSV_v1.1.0.md); this document describes the calling shapes.
 
-## 1. Ekspor
+## 1. Exports (TypeScript reference)
 
-| Nama | Jenis | Ringkas |
+| Name | Kind | Summary |
 |---|---|---|
-| `CSV` | kelas | API utama: parse sekali, lalu `toHTML`, `toJSON`, `aggregate`, getter |
-| `CSVParser` | kelas | parser record (SPEC §2) dan header/tipe (SPEC §3) |
-| `HTMLGenerator` | kelas | pembuat tabel HTML dari `CSVData` (SPEC §4) |
-| `CSVAggregator` | kelas | GROUP BY + SUM/COUNT/AVG dari `CSVData` (SPEC §5) |
-| `CSVError` | kelas | error dengan `code: CSVErrorCode` |
-| `detectTypes(rows)` | fungsi | tipe per kolom (SPEC §3) |
-| `escapeHTML(text)` | fungsi | escaping isi dan atribut HTML (SPEC §4) |
-| `isNumber`, `isDate`, `isBoolean` | fungsi | pola SPEC §3.1 |
-| `TYPE_SAMPLE_ROWS` | konstanta | `10` |
-| `CSVOptions`, `CSVData`, `DataType`, `AggregationOptions`, `AggregationResult`, `HTMLOptions`, `CSVErrorCode` | tipe | lihat §2 |
+| `CSV` | class | main API: parse once, then `toHTML`, `toJSON`, `aggregate`, getters |
+| `CSVParser` | class | record parser (SPEC §2) and header/type split (SPEC §3) |
+| `HTMLGenerator` | class | HTML table builder from `CSVData` (SPEC §4) |
+| `CSVAggregator` | class | GROUP BY + SUM/COUNT/AVG over `CSVData` (SPEC §5) |
+| `CSVError` | class | error with `code: CSVErrorCode` and the canonical `[CODE] message` |
+| `detectTypes(rows)` | function | per-column types (SPEC §3) |
+| `escapeHTML(text)` | function | HTML content and attribute escaping (SPEC §4) |
+| `isNumber`, `isDate`, `isBoolean` | functions | SPEC §3.1 patterns |
+| `TYPE_SAMPLE_ROWS` | constant | `10` |
+| `CSVOptions`, `CSVData`, `DataType`, `AggregationOptions`, `AggregationResult`, `HTMLOptions`, `CSVErrorCode` | types | see §2 |
 
-## 2. Tipe
+Name mapping per port: Python uses PEP 8 names (`to_json`, `get_headers`, `class_name`, `has_header`); PHP keeps the camelCase method names in the `CodingLombok\LombokCSV` namespace (`Csv`, `CsvParser`, `HtmlGenerator`, `CsvAggregator`, `CsvError`); Go exports `NewCSV`, `CSVParser`, `HTMLGenerator`, `CSVAggregator`, `CSVError`, `DetectTypes`, `EscapeHTML`, `IsNumber`, `IsDate`, `IsBoolean`, `Obj`.
+
+## 2. Types
 
 ```ts
 type DataType = 'string' | 'number' | 'date' | 'boolean'
 
 interface CSVOptions {
-  delimiter?: string   // bawaan ','
-  quote?: string       // bawaan '"'
-  hasHeader?: boolean  // bawaan true
-  trim?: boolean       // bawaan true (baru di 1.1.0)
-  escape?: string      // usang, diabaikan
+  delimiter?: string   // default ','
+  quote?: string       // default '"'
+  hasHeader?: boolean  // default true
+  trim?: boolean       // default true (new in 1.1.0)
+  escape?: string      // deprecated, ignored
 }
 
 interface CSVData { headers?: string[]; rows: string[][]; types: DataType[] }
@@ -44,44 +46,48 @@ interface HTMLOptions { className?: string; id?: string }
 type CSVErrorCode = 'INVALID_OPTION' | 'UNKNOWN_COLUMN'
 ```
 
-## 3. Kelas `CSV`
+Go maps optional fields to pointers (`Delimiter *string`, `HasHeader *bool`, ...; `nil` means default; an explicit empty `Delimiter`/`Quote` is invalid) and returns ordered `*Obj` objects where the contract mandates key order.
 
-| Anggota | Hasil | Catatan |
+## 3. Class `CSV`
+
+| Member | Result | Notes |
 |---|---|---|
-| `new CSV(data: string, options?: CSVOptions)` | — | melempar `CSVError('INVALID_OPTION')` untuk opsi tidak sah |
-| `getHeaders()` | `string[] \| undefined` | `undefined` bila `hasHeader: false` atau masukan kosong |
-| `getRows()` | `string[][]` | baris data tanpa header |
-| `getTypes()` | `DataType[]` | satu per kolom |
-| `toHTML(options?: HTMLOptions)` | `string` | `className`/`id` di-escape |
-| `toJSON()` | `Record<string,string>[] \| string[][]` | objek per baris bila ada header |
-| `aggregate(options: AggregationOptions)` | `AggregationResult[]` | melempar `CSVError('UNKNOWN_COLUMN')` |
+| `new CSV(data: string, options?: CSVOptions)` | — | throws `CSVError('INVALID_OPTION')` for invalid options |
+| `getHeaders()` | `string[] \| undefined` | `undefined` when `hasHeader: false` or empty input |
+| `getRows()` | `string[][]` | data rows without the header |
+| `getTypes()` | `DataType[]` | one per column |
+| `toHTML(options?: HTMLOptions)` | `string` | `className`/`id` are escaped |
+| `toJSON()` | `Record<string,string>[] \| string[][]` | objects per row when a header exists |
+| `aggregate(options: AggregationOptions)` | `AggregationResult[]` | throws `CSVError('UNKNOWN_COLUMN')` |
 
-## 4. Kelas tingkat rendah
+## 4. Lower-level classes
 
 ```ts
 const parser = new CSVParser(text, { delimiter: ';', trim: false })
-parser.parseRows()        // string[][] - semua record, termasuk header
-parser.parse(true)        // CSVData - header dipisah, tipe terdeteksi
+parser.parseRows()        // string[][] - all records, including the header
+parser.parse(true)        // CSVData - header split, types detected
 
-new HTMLGenerator(data).generate({ className: 'tabel' })
+new HTMLGenerator(data).generate({ className: 'report' })
 new CSVAggregator(data).aggregate({ groupBy: 0, count: true })
 ```
 
-## 5. Error
+## 5. Errors
 
 ```ts
 import { CSV, CSVError } from 'lombokcsv'
 try {
-  new CSV(text).aggregate({ groupBy: 'Wilayah', count: true })
+  new CSV(text).aggregate({ groupBy: 'Region', count: true })
 } catch (e) {
   if (e instanceof CSVError && e.code === 'UNKNOWN_COLUMN') { /* ... */ }
 }
 ```
 
-Program MUST memeriksa `code`, bukan teks pesan.
+Programs MUST match on `code`, not on the message text. The message itself is normative and starts with the code in brackets (SPEC §7), e.g. `[UNKNOWN_COLUMN] unknown column: Region`.
 
-## 6. Kompatibilitas dengan 1.0.0
+## 6. Compatibility with 1.0.0
 
-Tanda tangan semua anggota 1.0.0 tetap ada. Perubahan perilaku (perbaikan bug) dicatat di `CHANGELOG.md` 1.1.0 dan SPEC §9. Tipe `rows` dipersempit dari `any[][]` menjadi `string[][]`.
+The signatures of all 1.0.0 members are unchanged. Behaviour changes (bug fixes) are recorded in `CHANGELOG.md` 1.1.0 and SPEC §9. The `rows` type was narrowed from `any[][]` to `string[][]`, and error messages gained the `[CODE] ` prefix.
 
-*Lisensi dokumen: Apache-2.0 · © codinglombok*
+---
+
+*Document license: Apache-2.0 · © codinglombok*

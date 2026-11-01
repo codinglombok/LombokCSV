@@ -1,0 +1,8 @@
+dist
+coverage
+node_modules
+package-lock.json
+vectors/lombokcsv-vectors-v1.json
+crashes
+docs
+**/*.md

@@ -1,41 +1,174 @@
+# CI — LombokCSV: the TypeScript reference plus the Python, Go and PHP ports
+# must reproduce identical parsing, HTML, JSON and aggregation results.
 name: CI
-
-on:
-  push:
-    branches: ["main"]
-    tags: ["v*"]
-  pull_request:
-    branches: ["main"]
 
 permissions:
   contents: read
 
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
-  test:
+  detect:
+    name: Detect ports
+    runs-on: ubuntu-latest
+    outputs:
+      python: ${{ steps.ports.outputs.python }}
+      go: ${{ steps.ports.outputs.go }}
+      php: ${{ steps.ports.outputs.php }}
+      docker: ${{ steps.ports.outputs.docker }}
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+      - id: ports
+        run: |
+          echo "python=$([ -n "$(find python -name '*.py' -print -quit 2>/dev/null)" ] && echo true || echo false)" >> "$GITHUB_OUTPUT"
+          echo "go=$([ -n "$(find go -name '*.go' -print -quit 2>/dev/null)" ] && echo true || echo false)" >> "$GITHUB_OUTPUT"
+          echo "php=$([ -n "$(find php -name '*.php' -print -quit 2>/dev/null)" ] && echo true || echo false)" >> "$GITHUB_OUTPUT"
+          echo "docker=$([ -f Dockerfile ] && echo true || echo false)" >> "$GITHUB_OUTPUT"
+
+  typescript:
+    name: TypeScript (${{ matrix.os }}, Node ${{ matrix.node }})
     runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false
       matrix:
         os: [ubuntu-latest, windows-latest, macos-latest]
-        node-version: ["20", "22", "24"]
+        node: [20, 22, 24]
     steps:
       - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
       - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
         with:
-          node-version: ${{ matrix.node-version }}
+          node-version: ${{ matrix.node }}
           cache: npm
       - run: npm ci
       - run: npm run lint
+      - run: npm run lint:eslint
+      - run: npm run format:check
       - run: npm run coverage
       - run: npm run build
+      - if: matrix.os == 'ubuntu-latest' && matrix.node == 24
+        run: npm pack --dry-run
+
+  python:
+    name: Python ${{ matrix.python }} (${{ matrix.os }})
+    needs: detect
+    if: needs.detect.outputs.python == 'true'
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest, macos-latest]
+        python: ['3.9', '3.11', '3.13']
+    defaults:
+      run:
+        working-directory: python
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: ${{ matrix.python }}
+      - run: python -m pip install pytest coverage build
+      - run: python -m coverage run --branch --source=lombokcsv -m pytest -q
+      - run: python -m coverage report -m --fail-under=90
+      - run: python -m build
+
+  go:
+    name: Go ${{ matrix.go }} (${{ matrix.os }})
+    needs: detect
+    if: needs.detect.outputs.go == 'true'
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest, macos-latest]
+        go: ['1.22', '1.24']
+    defaults:
+      run:
+        working-directory: go
+        shell: bash
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+      - uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
+        with:
+          go-version: ${{ matrix.go }}
+          cache: false
+      - name: gofmt
+        if: runner.os == 'Linux'
+        run: |
+          out=$(gofmt -l .)
+          if [ -n "$out" ]; then echo "not gofmt-formatted:"; echo "$out"; exit 1; fi
+      - run: go vet ./...
+      - run: go test -coverprofile=cover.out ./...
+      - name: Coverage >= 90%
+        run: |
+          total=$(go tool cover -func=cover.out | awk '/^total:/ {sub("%","",$3); print $3}')
+          echo "coverage: $total%"
+          awk -v t="$total" 'BEGIN { exit !(t >= 90) }'
+
+  php:
+    name: PHP ${{ matrix.php }} (${{ matrix.os }})
+    needs: detect
+    if: needs.detect.outputs.php == 'true'
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest, macos-latest]
+        php: ['8.1', '8.3']
+    defaults:
+      run:
+        working-directory: php
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+      - uses: shivammathur/setup-php@f3e473d116dcccaddc5834248c87452386958240 # 2.37.2
+        with:
+          php-version: ${{ matrix.php }}
+          coverage: pcov
+          tools: none
+      - name: Lint
+        shell: bash
+        run: for f in $(find src tests -name '*.php'); do php -l "$f" > /dev/null || exit 1; done
+      - run: php -d pcov.enabled=1 -d pcov.directory=src tests/run.php --coverage=90
+
+  docker:
+    name: Container image (build + smoke)
+    # Every push must still produce a working image: the Dockerfile entrypoint
+    # is the smoke test, so "docker run" exiting 0 proves the shipped artefact
+    # computes the expected results.
+    needs: detect
+    if: needs.detect.outputs.docker == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+      - uses: docker/setup-buildx-action@f87e5991a6d7451dcb8d9637bfbc97413f497069 # v4.4.1
+      - name: Build the image (linux/amd64, no push)
+        uses: docker/build-push-action@c3c9e263c25d99ce0380d002d59b67737d91b0dc # v7.4.0
+        with:
+          context: .
+          platforms: linux/amd64
+          push: false
+          load: true
+          tags: lombokcsv:ci
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+      - name: Smoke-test the image
+        run: docker run --rm lombokcsv:ci
 
   standards:
+    name: Standards (vectors, doctor)
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
       - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
         with:
-          node-version: "22"
+          node-version: '22'
           cache: npm
       - run: npm ci
       - name: Vector file matches its source and SHA256SUMS
@@ -43,6 +176,12 @@ jobs:
           python3 vectors/build_vectors.py
           git diff --exit-code vectors/lombokcsv-vectors-v1.json
           sha256sum -c vectors/SHA256SUMS
+      - name: Every declared port ships a vector runner
+        run: |
+          test -f tests/vectors.test.ts
+          test -f python/tests/vectors_test.py
+          test -f go/vectors_test.go
+          test -f php/tests/vectors.php
       - name: lombok doctor
         env:
           LOMBOK_PRIVACY_TERMS: ${{ secrets.LOMBOK_PRIVACY_TERMS }}
@@ -53,28 +192,4 @@ jobs:
       - name: Fuzz parser
         run: npm run fuzz
         env:
-          FUZZ_EXECUTIONS: "200000"
-
-  publish-npm:
-    needs: [test, standards]
-    if: startsWith(github.ref, 'refs/tags/v')
-    runs-on: ubuntu-latest
-    permissions:
-      contents: read
-      id-token: write
-    steps:
-      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
-      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
-        with:
-          node-version: "22"
-          registry-url: https://registry.npmjs.org
-      - name: Tag must equal package.json version
-        run: |
-          v="$(node -p "require('./package.json').version")"
-          [ "v$v" = "${GITHUB_REF_NAME}" ] || { echo "tag ${GITHUB_REF_NAME} != v$v"; exit 1; }
-      - run: npm ci
-      - run: npm test
-      - run: npm run build
-      - run: npm publish --provenance --access public
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+          FUZZ_EXECUTIONS: '200000'

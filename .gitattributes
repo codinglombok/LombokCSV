@@ -1,0 +1,4 @@
+# Normalize line endings across all platforms (Windows checkouts included).
+# Text files are stored with LF in the repository and checked out with LF,
+# which keeps `prettier --check` and the test vectors byte-stable everywhere.
+* text=auto eol=lf
